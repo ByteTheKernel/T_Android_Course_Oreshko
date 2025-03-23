@@ -5,7 +5,10 @@ class Disk(
     override var isAvailable: Boolean,
     override val name: String,
     val type: String
-): LibraryItem {
-    override fun getShortInfo() = "$name доступен: ${if (isAvailable) "Да" else "Нет"}"
+): LibraryItem() {
     override fun getDetailedInfo() = "$type $name доступен: ${if (isAvailable) "Да" else "Нет"}"
+
+    override fun readInLibrary(): String {
+        return "Ошибка: Диски нельзя читать в зале!"
+    }
 }

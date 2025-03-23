@@ -5,14 +5,17 @@ import com.example.tapplication.library.*
 
 class LibraryApp {
     private val library = LibraryManager()
+    private val libraryItems = listOf<LibraryItem>(
+        Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
+        Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
+        Newspaper(201, true, "Коммерсант", 789),
+        Newspaper(202, true, "Известия", 1023),
+        Disk(301, true, "Интерстеллар", "DVD"),
+        Disk(302, true, "Пинк Флойд - The Wall", "CD"),
+    )
 
     init {
-        library.addItem(Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"))
-        library.addItem(Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"))
-        library.addItem(Newspaper(201, true, "Коммерсант", 789))
-        library.addItem(Newspaper(202, true, "Известия", 1023))
-        library.addItem(Disk(301, true, "Интерстеллар", "DVD"))
-        library.addItem(Disk(302, true, "Пинк Флойд - The Wall", "CD"))
+        library.addItems(libraryItems)
     }
 
     fun start() {
@@ -48,14 +51,14 @@ class LibraryApp {
         println("${items.size + 1}. Назад")
 
         when (val choice = readlnOrNull()?.toIntOrNull()) {
-            in 1..items.size -> choice?.let { showItemActions(type, it) }
+            in 1..items.size -> choice?.let {choice -> showItemActions(items[choice-1].id) }
             items.size + 1 -> return
             else -> println("Ошибка: Введите корректный номер.")
         }
     }
 
-    private fun showItemActions(type: Class<out LibraryItem>, index: Int){
-        val item = library.getItemByIndex(type, index)
+    private fun showItemActions(id: Int){
+        val item = library.getItemById(id)
         if (item == null) {
             println("Ошибка: Объект не найден.")
             return
@@ -70,10 +73,10 @@ class LibraryApp {
             println("5. Назад")
 
             when(readlnOrNull()?.toIntOrNull()) {
-                1 -> println(library.borrowItem(item, home = true))
-                2 -> println(library.borrowItem(item, home = false))
+                1 -> println(item.takeHome())
+                2 -> println(item.readInLibrary())
                 3 -> println(item.getDetailedInfo())
-                4 -> println(library.returnItem(item))
+                4 -> println(item.returnItem())
                 5 -> return
                 else -> println("Ошибка: Введите число от 1 до 5.")
             }
