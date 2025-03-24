@@ -19,18 +19,18 @@ abstract class LibraryItem: Returnable, TakeItemHome, ReadItemInLibrary{
     }
 
      override fun takeHome(): String {
-         checkAvailability()?.let { return it }
+         getNotAvailableText()?.let { return it }
          this.isAvailable = false
          return "${this::class.simpleName} ${this.id} взяли домой"
     }
 
     override fun readInLibrary(): String {
-        checkAvailability()?.let { return it }
+        getNotAvailableText()?.let { return it }
         this.isAvailable = false
         return "${this::class.simpleName} ${this.id} взяли в читальный зал"
     }
 
-    protected fun checkAvailability(): String? {
+    protected fun getNotAvailableText(): String? {
         return if (!this.isAvailable) {
             "Ошибка: ${this.name} уже занята!"
         } else {

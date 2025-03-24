@@ -1,21 +1,26 @@
 package com.example.tapplication.ui
 
-import com.example.tapplication.manager.LibraryManager
+import com.example.tapplication.management.*
 import com.example.tapplication.library.*
+import com.example.tapplication.shop.*
+import java.time.Month
 
 class LibraryApp {
     private val library = LibraryManager()
+    private val purchaseManager = PurchaseManager()
+    private val digitizationOffice = DigitalizationService()
+
     private val libraryItems = listOf<LibraryItem>(
         Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
         Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
-        Newspaper(201, true, "Коммерсант", 789),
-        Newspaper(202, true, "Известия", 1023),
+        Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
+        Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
         Disk(301, true, "Интерстеллар", "DVD"),
         Disk(302, true, "Пинк Флойд - The Wall", "CD"),
     )
 
     init {
-        library.addItems(libraryItems)
+        library.addListItems(libraryItems)
     }
 
     fun start() {
@@ -24,13 +29,15 @@ class LibraryApp {
             println("1. Показать книги")
             println("2. Показать газеты")
             println("3. Показать диски")
-            println("4. Выход")
+            println("4. Управление менеджером")
+            println("5. Выход")
 
             when(readlnOrNull()?.toIntOrNull()) {
-                1 -> showItems(Book::class.java)
-                2 -> showItems(Newspaper::class.java)
-                3 -> showItems(Disk::class.java)
-                4 -> {
+                1 -> showItems<Book>()
+                2 -> showItems<Newspaper>()
+                3 -> showItems<Disk>()
+                4 -> manageStore()
+                5 -> {
                     println("Выход из программы.")
                     return
                 }
@@ -39,8 +46,8 @@ class LibraryApp {
         }
     }
 
-    private fun showItems(type: Class<out LibraryItem>) {
-        val items = library.getItemsByType(type)
+    private inline fun<reified T: LibraryItem> showItems() {
+        val items = library.getItemsByType<T>()
         if (items.isEmpty()) {
             println("Нет доступных объектов.")
             return
@@ -70,15 +77,55 @@ class LibraryApp {
             println("2. Читать в читальном зале")
             println("3. Показать подробную информацию")
             println("4. Вернуть")
-            println("5. Назад")
+            if (item is Book || item is Newspaper) println("5. Оцифровать")
+            println("6. Назад")
 
             when(readlnOrNull()?.toIntOrNull()) {
                 1 -> println(item.takeHome())
                 2 -> println(item.readInLibrary())
                 3 -> println(item.getDetailedInfo())
                 4 -> println(item.returnItem())
-                5 -> return
+                5 -> {
+                    if (item is Digitalizable) {
+                        val disk = digitizationOffice.digitize(item)
+                        println("Оцифровка завершена: ${disk.getDetailedInfo()}")
+                        library.addItems(disk)
+                    } else {
+                        println("Ошибка: Этот объект нельзя оцифровать.")
+                    }
+                }
+                6 -> return
                 else -> println("Ошибка: Введите число от 1 до 5.")
+            }
+        }
+    }
+
+    private fun manageStore() {
+        while (true) {
+            println("\nВыберите магазин:")
+            println("1. Купить книгу")
+            println("2. Купить газету")
+            println("3. Купить диск")
+            println("4. Назад")
+
+            when (readlnOrNull()?.toIntOrNull()) {
+                1 -> {
+                    val book = purchaseManager.buy(BookShop())
+                    println("Покупка завершена: ${book.getDetailedInfo()}")
+                    library.addItems(book)
+                }
+                2 -> {
+                    val newspaper = purchaseManager.buy(NewspaperKiosk())
+                    println("Покупка завершена: ${newspaper.getDetailedInfo()}")
+                    library.addItems(newspaper)
+                }
+                3 -> {
+                    val disk = purchaseManager.buy(DiskShop())
+                    println("Покупка завершена: ${disk.getDetailedInfo()}")
+                    library.addItems(disk)
+                }
+                4 -> return
+                else -> println("Ошибка: Введите число от 1 до 4.")
             }
         }
     }
