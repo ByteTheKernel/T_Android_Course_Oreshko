@@ -8,12 +8,7 @@ class DigitalizationService {
 
     fun <T> digitize(item: T): Disk
         where T: LibraryItem,
-              T: Digitalizable {
-        return Disk(
-            id = idGenerator.incrementAndGet(),
-            isAvailable = true,
-            name = "Цифровая копия: ${item.name}",
-            type = "CD"
-        )
+              T: Digitalizable<T> {
+        return item.toDisk(idGenerator.incrementAndGet())
     }
 }

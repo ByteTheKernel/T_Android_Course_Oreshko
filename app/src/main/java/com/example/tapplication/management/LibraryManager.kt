@@ -19,6 +19,10 @@ class LibraryManager {
         return allItems.filterIsInstance<T>()
     }
 
+    fun <T: LibraryItem> getItemsByType(type: Class<T>): List<T> {
+        return items.filterIsInstance(type)
+    }
+
     fun getItemById(id: Int): LibraryItem? {
         return items.firstOrNull { it.id == id }
     }

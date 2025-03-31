@@ -8,6 +8,15 @@ class Book(
     override val name: String,
     val pages: Int,
     val author: String
-): LibraryItem(), Digitalizable {
+): LibraryItem(), Digitalizable<Book> {
     override fun getDetailedInfo() = "Книга: $name ($pages стр.) автора: $author с id: $id доступна: ${if (isAvailable) "Да" else "Нет"}"
+
+    override fun toDisk(newId: Int): Disk {
+        return Disk(
+            id = newId,
+            isAvailable = true,
+            name = "Цифровая копия книги: $name",
+            type = "CD"
+        )
+    }
 }

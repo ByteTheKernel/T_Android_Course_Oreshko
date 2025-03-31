@@ -3,7 +3,7 @@ package com.example.tapplication.ui
 import com.example.tapplication.management.*
 import com.example.tapplication.library.*
 import com.example.tapplication.shop.*
-import java.time.Month
+import com.example.tapplication.utils.Month
 
 class LibraryApp {
     private val library = LibraryManager()
@@ -33,9 +33,9 @@ class LibraryApp {
             println("5. Выход")
 
             when(readlnOrNull()?.toIntOrNull()) {
-                1 -> showItems<Book>()
-                2 -> showItems<Newspaper>()
-                3 -> showItems<Disk>()
+                1 -> showItems(Book::class.java)
+                2 -> showItems(Newspaper::class.java)
+                3 -> showItems(Disk::class.java)
                 4 -> manageStore()
                 5 -> {
                     println("Выход из программы.")
@@ -46,8 +46,8 @@ class LibraryApp {
         }
     }
 
-    private inline fun<reified T: LibraryItem> showItems() {
-        val items = library.getItemsByType<T>()
+    private fun<T: LibraryItem> showItems(type: Class<T>) {
+        val items = library.getItemsByType(type)
         if (items.isEmpty()) {
             println("Нет доступных объектов.")
             return
@@ -86,12 +86,10 @@ class LibraryApp {
                 3 -> println(item.getDetailedInfo())
                 4 -> println(item.returnItem())
                 5 -> {
-                    if (item is Digitalizable) {
-                        val disk = digitizationOffice.digitize(item)
-                        println("Оцифровка завершена: ${disk.getDetailedInfo()}")
-                        library.addItems(disk)
-                    } else {
-                        println("Ошибка: Этот объект нельзя оцифровать.")
+                    when (item) {
+                        is Book -> digitizeItem(item)
+                        is Newspaper -> digitizeItem(item)
+                        else -> println("Ошибка: Этот объект нельзя оцифровать.")
                     }
                 }
                 6 -> return
@@ -110,17 +108,17 @@ class LibraryApp {
 
             when (readlnOrNull()?.toIntOrNull()) {
                 1 -> {
-                    val book = purchaseManager.buy(BookShop())
+                    val book = purchaseManager.sell(BookShop())
                     println("Покупка завершена: ${book.getDetailedInfo()}")
                     library.addItems(book)
                 }
                 2 -> {
-                    val newspaper = purchaseManager.buy(NewspaperKiosk())
+                    val newspaper = purchaseManager.sell(NewspaperKiosk())
                     println("Покупка завершена: ${newspaper.getDetailedInfo()}")
                     library.addItems(newspaper)
                 }
                 3 -> {
-                    val disk = purchaseManager.buy(DiskShop())
+                    val disk = purchaseManager.sell(DiskShop())
                     println("Покупка завершена: ${disk.getDetailedInfo()}")
                     library.addItems(disk)
                 }
@@ -129,4 +127,13 @@ class LibraryApp {
             }
         }
     }
+
+    private fun <T> digitizeItem(item: T)
+            where T : LibraryItem,
+                  T : Digitalizable<T> {
+        val disk = digitizationOffice.digitize(item)
+        println("Оцифровка завершена: ${disk.getDetailedInfo()}")
+        library.addItems(disk)
+    }
+
 }
