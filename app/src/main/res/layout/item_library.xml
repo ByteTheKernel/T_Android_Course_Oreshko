@@ -2,6 +2,7 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/itemCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardElevation="10dp"
@@ -15,11 +16,11 @@
         android:padding="16dp">
         
         <ImageView
-            android:id="@+id/item_icon"
+            android:id="@+id/itemIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="16dp"
-            android:contentDescription="@string/item_icon" />
+            android:contentDescription="@string/item_icon_content_description" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -28,14 +29,14 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/item_name"
+                android:id="@+id/itemName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
                 android:textColor="@android:color/black" />
 
             <TextView
-                android:id="@+id/item_id"
+                android:id="@+id/itemId"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="14sp"

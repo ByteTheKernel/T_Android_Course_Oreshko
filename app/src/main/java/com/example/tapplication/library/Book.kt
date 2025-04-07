@@ -2,7 +2,7 @@ package com.example.tapplication.library
 
 import com.example.tapplication.management.Digitalizable
 
-class Book(
+data class Book(
     override val id: Int,
     override var isAvailable: Boolean,
     override val name: String,

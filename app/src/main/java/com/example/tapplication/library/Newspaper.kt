@@ -3,7 +3,7 @@ package com.example.tapplication.library
 import com.example.tapplication.management.Digitalizable
 import com.example.tapplication.utils.Month
 
-class Newspaper(
+data class Newspaper(
     override val id: Int,
     override var isAvailable: Boolean,
     override val name: String,

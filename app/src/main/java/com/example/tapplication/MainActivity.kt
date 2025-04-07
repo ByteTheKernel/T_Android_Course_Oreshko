@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tapplication.databinding.ActivityMainBinding
 import com.example.tapplication.library.Book
 import com.example.tapplication.library.Disk
 import com.example.tapplication.library.LibraryItem
@@ -15,8 +16,8 @@ import com.example.tapplication.ui.SwipeToDeleteCallback
 import com.example.tapplication.utils.Month
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: LibraryAdapter
-    private lateinit var recyclerView: RecyclerView
 
     private val libraryItems = mutableListOf<LibraryItem>(
         Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
@@ -29,21 +30,38 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        recyclerView = findViewById(R.id.recyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        adapter = LibraryAdapter(libraryItems) { item ->
-            item.isAvailable = !item.isAvailable
-            Toast.makeText(this, "Элемент с id #${item.id}", Toast.LENGTH_SHORT).show()
-            val index = libraryItems.indexOf(item)
-            if (index != -1) recyclerView.adapter?.notifyItemChanged(index)
+        adapter = LibraryAdapter { item ->
+            updateAvailability(item)
         }
 
-        recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.adapter = adapter
+        adapter.submitList(libraryItems.toList())
 
-        val itemTouchHelper = ItemTouchHelper(SwipeToDeleteCallback(adapter))
-        itemTouchHelper.attachToRecyclerView(recyclerView)
+        val itemTouchHelper = ItemTouchHelper(
+            SwipeToDeleteCallback { position ->
+                libraryItems.removeAt(position)
+                adapter.submitList(libraryItems.toList())
+            })
+        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
     }
+
+    private fun updateAvailability(item: LibraryItem) {
+        val index = libraryItems.indexOfFirst { it.id == item.id }
+        if (index != -1) {
+            val updatedItem = when (item) {
+                is Book -> item.copy(isAvailable = !item.isAvailable)
+                is Disk -> item.copy(isAvailable = !item.isAvailable)
+                is Newspaper -> item.copy(isAvailable = !item.isAvailable)
+                else -> item
+            }
+            libraryItems[index] = updatedItem
+            adapter.submitList(libraryItems.toList())
+            Toast.makeText(this, "Элемент с id #${item.id}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 }

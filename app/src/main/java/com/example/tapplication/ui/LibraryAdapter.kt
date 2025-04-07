@@ -2,34 +2,32 @@ package com.example.tapplication.ui
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
-import com.example.tapplication.R
+import androidx.recyclerview.widget.ListAdapter
+import com.example.tapplication.databinding.ItemLibraryBinding
 import com.example.tapplication.library.LibraryItem
 
 class LibraryAdapter(
-    private val items: MutableList<LibraryItem>,
     private  val  onItemClick: (LibraryItem) -> Unit
-): RecyclerView.Adapter<LibraryViewHolder>() {
+): ListAdapter<LibraryItem, LibraryViewHolder>(LibraryDiffCallback()) {
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): LibraryViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_library, parent, false)
-        return LibraryViewHolder(view)
+        val binding = ItemLibraryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return LibraryViewHolder(binding)
     }
 
     override fun onBindViewHolder(
         holder: LibraryViewHolder,
         position: Int
     ) {
-        holder.bind(items[position], onItemClick)
+        holder.bind(getItem(position), onItemClick)
     }
 
-    override fun getItemCount(): Int = items.size
-
     fun removeItem(position: Int) {
-        items.removeAt(position)
-        notifyItemRemoved(position)
+        val current = currentList.toMutableList()
+        current.removeAt(position)
+        submitList(current)
     }
 }

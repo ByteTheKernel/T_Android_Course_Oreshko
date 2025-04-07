@@ -1,6 +1,6 @@
 package com.example.tapplication.library
 
-class Disk(
+data class Disk(
     override val id: Int,
     override var isAvailable: Boolean,
     override val name: String,
