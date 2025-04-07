@@ -7,7 +7,8 @@ import com.example.tapplication.databinding.ItemLibraryBinding
 import com.example.tapplication.library.LibraryItem
 
 class LibraryAdapter(
-    private  val  onItemClick: (LibraryItem) -> Unit
+    private  val  onItemClick: (LibraryItem) -> Unit,
+    private val onItemLongClick: (LibraryItem) -> Unit
 ): ListAdapter<LibraryItem, LibraryViewHolder>(LibraryDiffCallback()) {
 
     override fun onCreateViewHolder(
@@ -22,7 +23,17 @@ class LibraryAdapter(
         holder: LibraryViewHolder,
         position: Int
     ) {
-        holder.bind(getItem(position), onItemClick)
+        val item = getItem(position)
+        holder.bind(item, onItemClick)
+
+        holder.itemView.setOnClickListener {
+            onItemClick(item) // открыть DetailsActivity
+        }
+
+        holder.itemView.setOnLongClickListener {
+            onItemLongClick(item) // переключить доступность
+            true
+        }
     }
 
     fun removeItem(position: Int) {
