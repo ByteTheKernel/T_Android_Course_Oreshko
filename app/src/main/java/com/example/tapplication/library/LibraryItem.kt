@@ -1,6 +1,8 @@
 package com.example.tapplication.library
 
-abstract class LibraryItem: Returnable, TakeItemHome, ReadItemInLibrary{
+import java.io.Serializable
+
+abstract class LibraryItem: Returnable, TakeItemHome, ReadItemInLibrary, Serializable{
     abstract val id: Int
     abstract var isAvailable: Boolean
     abstract val name: String
