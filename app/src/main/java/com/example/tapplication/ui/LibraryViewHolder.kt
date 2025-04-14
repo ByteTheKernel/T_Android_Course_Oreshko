@@ -15,19 +15,15 @@ class LibraryViewHolder(private val binding: ItemLibraryBinding): RecyclerView.V
         setIcon(item)
 
         setStyle(item, onItemClick)
-
-        itemView.setOnClickListener {
-            onItemClick(item)
-        }
     }
 
     private fun setIcon(item: LibraryItem) {
         binding.itemIcon.setImageResource(
             when(item) {
-                is Book -> R.drawable.free_icon_book
-                is Newspaper -> R.drawable.free_icon_newspaper
-                is Disk -> R.drawable.free_icon_vinyl
-                else -> R.drawable.unknown
+                is Book -> R.drawable.book_svg
+                is Newspaper -> R.drawable.newspaper_svg
+                is Disk -> R.drawable.disk_svg
+                else -> R.drawable.unknown_svg
             }
         )
     }
