@@ -61,7 +61,7 @@
             android:enabled="false"/>
 
         <TextView
-            android:id="@+id/extraLabel1"
+            android:id="@+id/libraryItemOptionalAttributeLabel1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
@@ -70,7 +70,7 @@
             android:visibility="gone" />
 
         <EditText
-            android:id="@+id/extraInput1"
+            android:id="@+id/libraryItemOptionalAttributeInput1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
@@ -78,7 +78,7 @@
             android:visibility="gone" />
 
         <TextView
-            android:id="@+id/extraLabel2"
+            android:id="@+id/libraryItemOptionalAttributeLabel2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
@@ -87,7 +87,7 @@
             android:visibility="gone" />
 
         <EditText
-            android:id="@+id/extraInput2"
+            android:id="@+id/libraryItemOptionalAttributeInput2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"

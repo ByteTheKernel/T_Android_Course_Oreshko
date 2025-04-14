@@ -1,10 +1,15 @@
 package com.example.tapplication
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tapplication.databinding.ActivityDetailsBinding
 import com.example.tapplication.library.*
+import com.example.tapplication.ui.viewmodels.DetailsViewModel
 import com.example.tapplication.utils.*
 
 class DetailsActivity: AppCompatActivity() {
@@ -16,37 +21,62 @@ class DetailsActivity: AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityDetailsBinding
-    private var isEditMode = false
-    private var item: LibraryItem? = null
+    private val viewModel: DetailsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        isEditMode = intent.getBooleanExtra(EXTRA_IS_EDIT_MODE, false)
-        item = intent.getSerializableExtra(EXTRA_ITEM) as? LibraryItem
+        viewModel.isEditMode = intent.getBooleanExtra(EXTRA_IS_EDIT_MODE, false)
 
-        if (item != null) {
-            showItemDetails(item!!)
+        viewModel.currentItem = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_ITEM, LibraryItem::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(EXTRA_ITEM) as? LibraryItem
         }
 
-        if (isEditMode) {
+        if (viewModel.currentItem != null) {
+            showItemDetails(viewModel.currentItem!!)
+        }
+
+        if (viewModel.isEditMode) {
             enableEditMode()
         } else {
             disableEditMode()
         }
 
-        val newType = intent.getStringExtra(EXTRA_NEW_ITEM_TYPE)
-        if (item == null && isEditMode && newType != null ) {
-            showEmptyFormForType(ItemType.valueOf(newType))
+        viewModel.newItemType = intent.getStringExtra(EXTRA_NEW_ITEM_TYPE)?.let {
+            ItemType.valueOf(it)
+        }
+
+        if (viewModel.currentItem == null && viewModel.isEditMode && viewModel.newItemType != null ) {
+            showEmptyFormForType(viewModel.newItemType!!)
         }
 
         binding.saveButton.setOnClickListener {
-            if (isEditMode && newType != null) {
-                val newItem = createItemFromInput(ItemType.valueOf(newType))
-                setResult(RESULT_OK, intent.putExtra(EXTRA_ITEM, newItem))
-                finish()
+            if (viewModel.isEditMode && viewModel.newItemType != null) {
+                val name = binding.itemDetailName.text.toString()
+                val id = binding.itemId.text.toString().toIntOrNull() ?: 0
+                val field1 = binding.libraryItemOptionalAttributeInput1.text.toString()
+                val field2 = binding.libraryItemOptionalAttributeInput2.text.toString()
+
+                val newItem = viewModel.createItemFromInput(
+                    viewModel.newItemType!!,
+                    name,
+                    id,
+                    field1,
+                    field2
+                )
+
+                newItem?.let {
+                    val resultIntent = Intent().apply {
+                        putExtra(EXTRA_ITEM, it)
+                    }
+                    setResult(RESULT_OK, resultIntent)
+                    finish()
+                }
             }
         }
     }
@@ -62,132 +92,89 @@ class DetailsActivity: AppCompatActivity() {
         when (item) {
             is Book -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.book_svg)
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraLabel1.text = "Автор"
-                binding.extraInput1.setText(item.author)
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.book_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeInput1.setText(item.author)
 
-                binding.extraLabel2.visibility = View.VISIBLE
-                binding.extraInput2.visibility = View.VISIBLE
-                binding.extraLabel2.text = "Страниц"
-                binding.extraInput2.setText(item.pages.toString())
+                binding.libraryItemOptionalAttributeLabel2.show()
+                binding.libraryItemOptionalAttributeInput2.show()
+                binding.libraryItemOptionalAttributeLabel2.text = getString(R.string.book_optional_attribute_label_2)
+                binding.libraryItemOptionalAttributeInput2.setText(item.pages.toString())
             }
 
             is Disk -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.disk_svg)
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraLabel1.text = "Тип диска"
-                binding.extraInput1.setText(item.type)
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.disk_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeInput1.setText(item.type)
 
-                binding.extraLabel2.visibility = View.GONE
-                binding.extraInput2.visibility = View.GONE
+                binding.libraryItemOptionalAttributeLabel2.gone()
+                binding.libraryItemOptionalAttributeInput2.gone()
             }
 
             is Newspaper -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.newspaper_svg)
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraLabel1.text = "Выпуск"
-                binding.extraInput1.setText(item.issueNumber.toString())
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.newspaper_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeInput1.setText(item.issueNumber.toString())
 
-                binding.extraLabel2.visibility = View.VISIBLE
-                binding.extraInput2.visibility = View.VISIBLE
-                binding.extraLabel2.text = "Месяц"
-                binding.extraInput2.setText(item.month.russianMonth)
+                binding.libraryItemOptionalAttributeLabel2.show()
+                binding.libraryItemOptionalAttributeInput2.show()
+                binding.libraryItemOptionalAttributeLabel2.text = getString(R.string.newspaper_optional_attribute_label_2)
+                binding.libraryItemOptionalAttributeInput2.setText(item.month.russianMonth)
             }
         }
     }
 
     private fun enableEditMode() {
         binding.itemDetailName.isEnabled = true
-        binding.extraInput1.isEnabled = true
-        binding.extraInput2.isEnabled = true
-        binding.saveButton.visibility = View.VISIBLE
+        binding.libraryItemOptionalAttributeInput1.isEnabled = true
+        binding.libraryItemOptionalAttributeInput2.isEnabled = true
+        binding.saveButton.show()
     }
 
     private fun disableEditMode() {
         binding.itemDetailName.isEnabled = false
-        binding.extraInput1.isEnabled = false
-        binding.extraInput2.isEnabled = false
-        binding.saveButton.visibility = View.GONE
+        binding.libraryItemOptionalAttributeInput1.isEnabled = false
+        binding.libraryItemOptionalAttributeInput2.isEnabled = false
+        binding.saveButton.gone()
     }
 
     private fun showEmptyFormForType(type: ItemType) {
         when(type) {
             ItemType.BOOK -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.book_svg)
-                binding.extraLabel1.text = "Автор"
-                binding.extraLabel2.text = "Страниц"
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraLabel2.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraInput2.visibility = View.VISIBLE
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.book_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeLabel2.text = getString(R.string.book_optional_attribute_label_2)
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeLabel2.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeInput2.show()
             }
 
             ItemType.DISK -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.disk_svg)
-                binding.extraLabel1.text = "Тип диска"
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraLabel2.visibility = View.GONE
-                binding.extraInput2.visibility = View.GONE
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.disk_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeLabel2.gone()
+                binding.libraryItemOptionalAttributeInput2.gone()
             }
 
             ItemType.NEWSPAPER -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.newspaper_svg)
-                binding.extraLabel1.text = "Выпуск"
-                binding.extraLabel2.text = "Месяц"
-                binding.extraLabel1.visibility = View.VISIBLE
-                binding.extraLabel2.visibility = View.VISIBLE
-                binding.extraInput1.visibility = View.VISIBLE
-                binding.extraInput2.visibility = View.VISIBLE
+                binding.libraryItemOptionalAttributeLabel1.text = getString(R.string.newspaper_optional_attribute_label_1)
+                binding.libraryItemOptionalAttributeLabel2.text = getString(R.string.newspaper_optional_attribute_label_2)
+                binding.libraryItemOptionalAttributeLabel1.show()
+                binding.libraryItemOptionalAttributeLabel2.show()
+                binding.libraryItemOptionalAttributeInput1.show()
+                binding.libraryItemOptionalAttributeInput2.show()
             }
         }
         binding.availableCheckbox.isChecked = true
         binding.availableCheckbox.isEnabled = false
-    }
-
-    private fun createItemFromInput(type: ItemType): LibraryItem? {
-        val name = binding.itemDetailName.text.toString()
-        val id = binding.itemId.text.toString().toIntOrNull() ?: 0
-        val field1 = binding.extraInput1.text.toString()
-        val field2 = binding.extraInput2.text.toString()
-
-        return when (type) {
-            ItemType.BOOK -> {
-                Book(
-                    id = id,
-                    isAvailable = true,
-                    name = name,
-                    pages = field2.toIntOrNull() ?: 0,
-                    author = field1
-                )
-            }
-
-            ItemType.DISK -> {
-                Disk(
-                    id = id,
-                    isAvailable = true,
-                    name = name,
-                    type = field1
-                )
-            }
-
-            ItemType.NEWSPAPER -> {
-                val month = Month.entries.firstOrNull {
-                    it.russianMonth.equals(
-                        field2, ignoreCase = true
-                    )} ?: return null
-
-                Newspaper(
-                    id = id,
-                    isAvailable = true,
-                    name = name,
-                    issueNumber = field1.toIntOrNull() ?: 0,
-                    month = month
-                )
-            }
-        }
     }
 }

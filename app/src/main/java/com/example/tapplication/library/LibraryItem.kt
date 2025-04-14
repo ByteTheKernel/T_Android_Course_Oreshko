@@ -1,8 +1,8 @@
 package com.example.tapplication.library
 
-import java.io.Serializable
+import android.os.Parcelable
 
-abstract class LibraryItem: Returnable, TakeItemHome, ReadItemInLibrary, Serializable{
+abstract class LibraryItem: Returnable, TakeItemHome, ReadItemInLibrary, Parcelable{
     abstract val id: Int
     abstract var isAvailable: Boolean
     abstract val name: String

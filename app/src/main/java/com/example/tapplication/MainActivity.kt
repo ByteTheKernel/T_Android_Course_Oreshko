@@ -2,9 +2,11 @@ package com.example.tapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -16,6 +18,7 @@ import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.library.Newspaper
 import com.example.tapplication.ui.LibraryAdapter
 import com.example.tapplication.ui.SwipeToDeleteCallback
+import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.*
 
 class MainActivity : AppCompatActivity() {
@@ -25,15 +28,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: LibraryAdapter
+    private val viewModel: MainViewModel by viewModels()
 
-    private val libraryItems = mutableListOf<LibraryItem>(
-        Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
-        Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
-        Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
-        Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
-        Disk(301, true, "Интерстеллар", "DVD"),
-        Disk(302, true, "Пинк Флойд - The Wall", "CD")
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,17 +40,28 @@ class MainActivity : AppCompatActivity() {
 
         adapter = LibraryAdapter(
             onItemClick = { item -> openDetails(item) },
-            onItemLongClick = { item -> updateAvailability(item) }
+            onItemLongClick = { item -> viewModel.updateItemAvailability(item) }
         )
+
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
-        adapter.submitList(libraryItems.toList())
+
+
+        viewModel.items.observe(this) { items ->
+            adapter.submitList(items)
+        }
+
+        viewModel.toastMessage.observe(this) { message ->
+            message?.let {
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+                viewModel.onToastShown()
+            }
+        }
 
         val itemTouchHelper = ItemTouchHelper(
             SwipeToDeleteCallback { position ->
-                libraryItems.removeAt(position)
-                adapter.submitList(libraryItems.toList())
+                viewModel.removeItem(position)
             })
         itemTouchHelper.attachToRecyclerView(binding.recyclerView)
     }
@@ -77,33 +84,15 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_ITEM_REQUEST_CODE && resultCode == RESULT_OK) {
-            val newItem = data?.getSerializableExtra(DetailsActivity.EXTRA_ITEM) as? LibraryItem
-            newItem?.let {
-                libraryItems.add(it)
-                adapter.submitList(libraryItems.toList())
-            }
+            val newItem = data?.getParcelableExtra<LibraryItem>(DetailsActivity.EXTRA_ITEM)
+            newItem?.let { viewModel.addItem(it) }
 
-        }
-    }
-
-    private fun updateAvailability(item: LibraryItem) {
-        val index = libraryItems.indexOfFirst { it.id == item.id }
-        if (index != -1) {
-            val updatedItem = when (item) {
-                is Book -> item.copy(isAvailable = !item.isAvailable)
-                is Disk -> item.copy(isAvailable = !item.isAvailable)
-                is Newspaper -> item.copy(isAvailable = !item.isAvailable)
-                else -> item
-            }
-            libraryItems[index] = updatedItem
-            adapter.submitList(libraryItems.toList())
-            Toast.makeText(this, "Элемент с id #${item.id}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun openDetails(item: LibraryItem) {
         val intent = Intent(this, DetailsActivity::class.java)
-        intent.putExtra(DetailsActivity.EXTRA_ITEM, item)
+        intent.putExtra(DetailsActivity.EXTRA_ITEM, item as Parcelable)
         intent.putExtra(DetailsActivity.EXTRA_IS_EDIT_MODE, false)
         startActivity(intent)
     }

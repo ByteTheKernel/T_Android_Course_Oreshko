@@ -14,4 +14,9 @@
     <string name="detail_button_save_text">Сохранить</string>
     <string name="detail_checkbox_available">есть в наличии</string>
     <string name="menu_main_title">Добавить</string>
+    <string name="book_optional_attribute_label_1">Автор</string>
+    <string name="book_optional_attribute_label_2">Страниц</string>
+    <string name="disk_optional_attribute_label_1">Тип диска</string>
+    <string name="newspaper_optional_attribute_label_1">Выпуск</string>
+    <string name="newspaper_optional_attribute_label_2">Месяц</string>
 </resources>
