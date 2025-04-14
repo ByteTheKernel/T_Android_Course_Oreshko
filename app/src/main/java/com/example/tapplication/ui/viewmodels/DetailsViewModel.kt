@@ -8,10 +8,6 @@ import com.example.tapplication.utils.*
 
 class DetailsViewModel: ViewModel() {
 
-    var currentItem: LibraryItem? = null
-    var isEditMode: Boolean = false
-    var newItemType: ItemType? = null
-
     fun createItemFromInput(
         type: ItemType,
         name: String,

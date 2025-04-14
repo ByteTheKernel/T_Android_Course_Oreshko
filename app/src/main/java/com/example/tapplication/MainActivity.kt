@@ -1,120 +1,115 @@
 package com.example.tapplication
 
-import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Parcelable
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.Toast
+import android.view.View
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import com.example.tapplication.databinding.ActivityMainBinding
-import com.example.tapplication.library.Book
-import com.example.tapplication.library.Disk
-import com.example.tapplication.library.LibraryItem
-import com.example.tapplication.library.Newspaper
-import com.example.tapplication.ui.LibraryAdapter
-import com.example.tapplication.ui.SwipeToDeleteCallback
+import com.example.tapplication.ui.fragments.AddFragment
+import com.example.tapplication.ui.fragments.ListFragment
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.*
 
 class MainActivity : AppCompatActivity() {
-    companion object {
-        private const val ADD_ITEM_REQUEST_CODE = 100
-    }
-
     private lateinit var binding: ActivityMainBinding
-    private lateinit var adapter: LibraryAdapter
+    private lateinit var navController: NavController
     private val viewModel: MainViewModel by viewModels()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
-
-        adapter = LibraryAdapter(
-            onItemClick = { item -> openDetails(item) },
-            onItemLongClick = { item -> viewModel.updateItemAvailability(item) }
-        )
-
-
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
-
-
-        viewModel.items.observe(this) { items ->
-            adapter.submitList(items)
+        if(!isTwoPaneMode()) {
+            val navHostFragment = supportFragmentManager
+                .findFragmentById(R.id.navHostFragment) as NavHostFragment
+            navController = navHostFragment.navController
         }
 
-        viewModel.toastMessage.observe(this) { message ->
-            message?.let {
-                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-                viewModel.onToastShown()
+        if (isTwoPaneMode()) {
+            setupTwoPaneMode()
+        }
+
+        viewModel.selectedItemId.observe(this) { itemId ->
+            itemId?.let {
+                showDetail(binding, it)
             }
         }
-
-        val itemTouchHelper = ItemTouchHelper(
-            SwipeToDeleteCallback { position ->
-                viewModel.removeItem(position)
-            })
-        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
+    private fun isTwoPaneMode(): Boolean {
+        return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.actionAdd -> {
-                openDetailsForNewItem()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+    private fun setupTwoPaneMode() {
+
+        if (supportFragmentManager.findFragmentById(R.id.listContainer) == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.listContainer, ListFragment().apply {
+                    arguments = Bundle().apply { putBoolean("isTwoPane", true) }
+                })
+                .commit()
         }
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == ADD_ITEM_REQUEST_CODE && resultCode == RESULT_OK) {
-            val newItem = data?.getParcelableExtra<LibraryItem>(DetailsActivity.EXTRA_ITEM)
-            newItem?.let { viewModel.addItem(it) }
-
-        }
-    }
-
-    private fun openDetails(item: LibraryItem) {
-        val intent = Intent(this, DetailsActivity::class.java)
-        intent.putExtra(DetailsActivity.EXTRA_ITEM, item as Parcelable)
-        intent.putExtra(DetailsActivity.EXTRA_IS_EDIT_MODE, false)
-        startActivity(intent)
-    }
-
-    private fun openDetailsForNewItem() {
-        val options = arrayOf("Книга", "Диск", "Газета")
-        AlertDialog.Builder(this)
-            .setTitle("Выберите тип элемента")
-            .setItems(options) { _, which ->
-                val selectedItemType = when (which) {
-                    0 -> ItemType.BOOK
-                    1 -> ItemType.DISK
-                    2 -> ItemType.NEWSPAPER
-                    else -> null
-                }
-                selectedItemType?.let {
-                    val intent = Intent(this, DetailsActivity::class.java)
-                    intent.putExtra(DetailsActivity.EXTRA_IS_EDIT_MODE, true)
-                    intent.putExtra(DetailsActivity.EXTRA_NEW_ITEM_TYPE, selectedItemType.name)
-                    startActivityForResult(intent, ADD_ITEM_REQUEST_CODE)
+        viewModel.selectedItemId.observe(this) { itemId ->
+            itemId?.let {
+                if (isTwoPaneMode()) {
+                    showDetail(binding, it)
+                } else {
+                    // В книжной ориентации переходим к фрагменту с детальной информацией
+                    findNavController(R.id.navHostFragment).navigate(
+                        R.id.action_listFragment_to_detailFragment,
+                        Bundle().apply { putInt("itemId", it) }
+                    )
                 }
             }
-            .show()
+        }
+    }
+
+    fun showAddForm() {
+        binding.detailContainer?.let { container ->
+            container.visibility = View.VISIBLE
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.detailContainer, AddFragment().apply {
+                    arguments = Bundle().apply { putBoolean("isTwoPane", true) }
+                })
+                .commit()
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        recreate()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return if (binding.detailContainer?.visibility == View.VISIBLE) {
+            hideDetail()
+            true
+        } else {
+            navController.navigateUp() || super.onSupportNavigateUp()
+        }
+    }
+
+    override fun onBackPressed() {
+        if (binding.detailContainer?.visibility == View.VISIBLE) {
+            hideDetail()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    internal fun hideDetail() {
+        binding.detailContainer?.let { container ->
+            container.visibility = View.GONE
+            supportFragmentManager.beginTransaction()
+                .remove(supportFragmentManager.findFragmentById(R.id.detailContainer)!!)
+                .commit()
+        }
+        viewModel.clearSelectedItem()
     }
 }

@@ -13,8 +13,17 @@ class MainViewModel: ViewModel() {
     private val _items = MutableLiveData<List<LibraryItem>>()
     val items: LiveData<List<LibraryItem>> = _items
 
+    private val _selectedItem = MutableLiveData<LibraryItem?>()
+    val selectedItem: LiveData<LibraryItem?> = _selectedItem
+
+    private val _selectedItemId = MutableLiveData<Int?>()
+    val selectedItemId: LiveData<Int?> = _selectedItemId
+
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
+
+    private val _scrollPosition = MutableLiveData<Int>()
+    val scrollPosition: LiveData<Int> = _scrollPosition
 
     init {
         _items.value = listOf(
@@ -57,5 +66,30 @@ class MainViewModel: ViewModel() {
         val currentList = _items.value?.toMutableList() ?: return
         currentList.removeAt(position)
         _items.value = currentList
+    }
+
+    fun getItemById(itemId: Int): LibraryItem? {
+        return _items.value?.find { it.id == itemId }
+    }
+
+    fun getSelectedItem(): LibraryItem? {
+        val itemId = _selectedItemId.value ?: return null
+        return _items.value?.find { it.id == itemId }
+    }
+
+    fun selectItem(item: LibraryItem) {
+        _selectedItemId.value = item.id
+    }
+
+    fun clearSelectedItem() {
+        _selectedItemId.value = null
+    }
+
+    fun saveScrollPosition(position: Int) {
+        _scrollPosition.value = position
+    }
+
+    fun restoreScrollPosition(): Int {
+        return _scrollPosition.value ?: 0
     }
 }

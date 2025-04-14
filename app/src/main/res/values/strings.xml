@@ -1,4 +1,10 @@
 <resources>
+    <string-array name="item_types">
+        <item>Book</item>
+        <item>Disk</item>
+        <item>Newspaper</item>
+    </string-array>
+
     <string name="app_name">TApplication</string>
     <string name="item_icon_content_description">Иконка элемента</string>
     <string name="item_id">ID: %d</string>
@@ -19,4 +25,5 @@
     <string name="disk_optional_attribute_label_1">Тип диска</string>
     <string name="newspaper_optional_attribute_label_1">Выпуск</string>
     <string name="newspaper_optional_attribute_label_2">Месяц</string>
+    <string name="add_item">Добавление элемента</string>
 </resources>
