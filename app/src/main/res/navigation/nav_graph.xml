@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/listFragment">
+
+    <fragment
+        android:id="@+id/listFragment"
+        android:name="com.example.tapplication.ui.fragments.ListFragment"
+        android:label="Library Items"
+        tools:layout="@layout/fragment_list">
+
+        <action
+            android:id="@+id/action_listFragment_to_detailFragment"
+            app:destination="@id/detailFragment" />
+
+        <action
+            android:id="@+id/action_listFragment_to_addFragment"
+            app:destination="@id/addFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/detailFragment"
+        android:name="com.example.tapplication.ui.fragments.DetailFragment"
+        android:label="Item Details"
+        tools:layout="@layout/fragment_detail">
+
+        <argument
+            android:name="itemId"
+            app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addFragment"
+        android:name="com.example.tapplication.ui.fragments.AddFragment"
+        android:label="Add new Item"
+        tools:layout="@layout/fragment_add">
+    </fragment>
+
+</navigation>
