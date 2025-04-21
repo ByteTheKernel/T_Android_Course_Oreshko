@@ -17,6 +17,20 @@ import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.gone
 
 class DetailFragment : Fragment() {
+    companion object {
+        fun getInstance(itemId: Int, isTwoPane: Boolean): DetailFragment {
+            return DetailFragment().apply {
+                arguments = createBundle(itemId, isTwoPane)
+            }
+        }
+
+        internal fun createBundle(itemId: Int, isTwoPane: Boolean): Bundle {
+            return Bundle().apply {
+                putInt("itemId", itemId)
+                putBoolean("isTwoPane", isTwoPane)
+            }
+        }
+    }
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
@@ -50,6 +64,17 @@ class DetailFragment : Fragment() {
 
     private fun bindItem(item: LibraryItem) {
         with(binding) {
+            setupCommonFields(item)
+            when (item) {
+                is Book -> setupBookFields(item)
+                is Disk -> setupDiskFields(item)
+                is Newspaper -> setupNewspaperFields(item)
+            }
+        }
+    }
+
+    private fun setupCommonFields(item: LibraryItem) {
+        with(binding) {
             itemDetailName.setText(item.name)
             itemId.setText(item.id.toString())
             availableCheckbox.isChecked = item.isAvailable
@@ -58,29 +83,35 @@ class DetailFragment : Fragment() {
             libraryItemOptionalAttributeInput1.isEnabled = false
             libraryItemOptionalAttributeInput2.isEnabled = false
             itemId.isEnabled = false
+        }
+    }
 
-            when (item) {
-                is Book -> {
-                    itemDetailIcon.setImageResource(R.drawable.book_svg)
-                    libraryItemOptionalAttributeLabel1.hint = getString(R.string.book_optional_attribute_label_1)
-                    libraryItemOptionalAttributeInput1.setText(item.author)
-                    libraryItemOptionalAttributeLabel2.hint = getString(R.string.book_optional_attribute_label_2)
-                    libraryItemOptionalAttributeInput2.setText(item.pages.toString())
-                }
-                is Disk -> {
-                    itemDetailIcon.setImageResource(R.drawable.disk_svg)
-                    libraryItemOptionalAttributeLabel1.hint = getString(R.string.disk_optional_attribute_label_1)
-                    libraryItemOptionalAttributeInput1.setText(item.type)
-                    libraryItemOptionalAttributeLabel2.gone()
-                }
-                is Newspaper -> {
-                    itemDetailIcon.setImageResource(R.drawable.newspaper_svg)
-                    libraryItemOptionalAttributeLabel1.hint = getString(R.string.newspaper_optional_attribute_label_1)
-                    libraryItemOptionalAttributeInput1.setText(item.issueNumber.toString())
-                    libraryItemOptionalAttributeLabel2.hint = getString(R.string.newspaper_optional_attribute_label_1)
-                    libraryItemOptionalAttributeInput2.setText(item.month.russianMonth)
-                }
-            }
+    private fun setupBookFields(book: Book) {
+        with(binding) {
+            itemDetailIcon.setImageResource(R.drawable.book_svg)
+            libraryItemOptionalAttributeLabel1.hint = getString(R.string.book_optional_attribute_label_1)
+            libraryItemOptionalAttributeInput1.setText(book.author)
+            libraryItemOptionalAttributeLabel2.hint = getString(R.string.book_optional_attribute_label_2)
+            libraryItemOptionalAttributeInput2.setText(book.pages.toString())
+        }
+    }
+
+    private fun setupDiskFields(disk: Disk) {
+        with(binding) {
+            itemDetailIcon.setImageResource(R.drawable.disk_svg)
+            libraryItemOptionalAttributeLabel1.hint = getString(R.string.disk_optional_attribute_label_1)
+            libraryItemOptionalAttributeInput1.setText(disk.type)
+            libraryItemOptionalAttributeLabel2.gone()
+        }
+    }
+
+    private fun setupNewspaperFields(newspaper: Newspaper) {
+        with(binding) {
+            itemDetailIcon.setImageResource(R.drawable.newspaper_svg)
+            libraryItemOptionalAttributeLabel1.hint = getString(R.string.newspaper_optional_attribute_label_1)
+            libraryItemOptionalAttributeInput1.setText(newspaper.issueNumber.toString())
+            libraryItemOptionalAttributeLabel2.hint = getString(R.string.newspaper_optional_attribute_label_2)
+            libraryItemOptionalAttributeInput2.setText(newspaper.month.russianMonth)
         }
     }
 

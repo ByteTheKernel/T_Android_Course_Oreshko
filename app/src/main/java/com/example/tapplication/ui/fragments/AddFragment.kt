@@ -10,6 +10,9 @@ import android.widget.AdapterView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.tapplication.MainActivity
 import com.example.tapplication.R
@@ -18,13 +21,30 @@ import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.ui.viewmodels.DetailsViewModel
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.ItemType
+import com.example.tapplication.utils.show
+import kotlinx.coroutines.launch
 
 
 class AddFragment : Fragment() {
+    companion object {
+        fun getInstance(isTwoPane: Boolean): AddFragment {
+            return AddFragment().apply {
+                arguments = createBundle(isTwoPane)
+            }
+        }
+
+        private fun createBundle(isTwoPane: Boolean): Bundle {
+            return Bundle().apply {
+                putBoolean("isTwoPane", isTwoPane)
+            }
+        }
+    }
+
     private var _binding: FragmentAddBinding? = null
     private val binding get() = _binding!!
     private val detailsViewModel: DetailsViewModel by activityViewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
+    private var isTwoPane = Bundle().getBoolean("isTwoPane")
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,6 +52,11 @@ class AddFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAddBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         // Настройка Spinner для выбора типа элемента
         val itemTypes = ItemType.entries.map { it.name }
@@ -39,32 +64,73 @@ class AddFragment : Fragment() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.itemTypeSpinner.adapter = adapter
 
+        // Подписываемся на изменения состояния формы
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                detailsViewModel.formState.collect { formSate ->
+                    updateUIForType(formSate.type)
+                }
+            }
+        }
+
+        // Подписываемся на создание нового элемента
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                detailsViewModel.createdItem.collect { newItem ->
+                    if (newItem != null) {
+                        mainViewModel.addItem(newItem)
+                        detailsViewModel.resetForm()
+
+                        if (!isTwoPane) {
+                            findNavController().navigateUp()
+                        } else {
+                            (activity as MainActivity).hideDetail()
+                        }
+                    }
+                }
+            }
+        }
+
         // Обработка выбора типа элемента
         binding.itemTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedType = ItemType.entries[position]
-                updateUIForType(selectedType)
+                detailsViewModel.updateType(selectedType)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        binding.saveButton.setOnClickListener {
-            val newItem = createItemFromInput()
-            if (newItem != null) {
-                mainViewModel.addItem(newItem)
-
-                if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    findNavController().navigateUp()
-                } else {
-                    (activity as MainActivity).hideDetail()
-                }
-            } else {
-                showError("Please fill all fields correctly")
+        // Обработка ввода данных
+        binding.itemDetailName.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                detailsViewModel.updateName(binding.itemDetailName.text.toString())
             }
         }
 
-        return binding.root
+        binding.itemId.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                detailsViewModel.updateId(binding.itemId.text.toString().toIntOrNull() ?: 0)
+            }
+        }
+
+        binding.libraryItemOptionalAttributeInput1.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                detailsViewModel.updateField1(binding.libraryItemOptionalAttributeInput1.text.toString())
+            }
+        }
+
+        binding.libraryItemOptionalAttributeInput2.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                detailsViewModel.updateField2(binding.libraryItemOptionalAttributeInput2.text.toString())
+            }
+        }
+
+
+        binding.saveButton.setOnClickListener {
+            detailsViewModel.createItemFromInput()
+        }
+
     }
 
     private fun updateUIForType(type: ItemType) {
@@ -73,7 +139,7 @@ class AddFragment : Fragment() {
                 binding.itemDetailIcon.setImageResource(R.drawable.book_svg)
                 binding.libraryItemOptionalAttributeLabel1.hint = "Author"
                 binding.libraryItemOptionalAttributeLabel2.hint = "Pages"
-                binding.libraryItemOptionalAttributeLabel2.visibility = View.VISIBLE
+                binding.libraryItemOptionalAttributeLabel2.show()
             }
             ItemType.DISK -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.disk_svg)
@@ -87,20 +153,6 @@ class AddFragment : Fragment() {
                 binding.libraryItemOptionalAttributeLabel2.visibility = View.VISIBLE
             }
         }
-    }
-
-    private fun createItemFromInput(): LibraryItem? {
-        val type = ItemType.valueOf(binding.itemTypeSpinner.selectedItem.toString())
-        val name = binding.itemDetailName.text.toString()
-        val id = binding.itemId.text.toString().toIntOrNull() ?: return null
-        val field1 = binding.libraryItemOptionalAttributeInput1.text.toString()
-        val field2 = binding.libraryItemOptionalAttributeInput2.text.toString()
-
-        return detailsViewModel.createItemFromInput(type, name, id, field1, field2)
-    }
-
-    private fun showError(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {

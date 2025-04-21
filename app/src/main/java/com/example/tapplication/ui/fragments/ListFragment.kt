@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tapplication.databinding.FragmentListBinding
@@ -19,10 +20,24 @@ import com.example.tapplication.ui.LibraryAdapter
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.MainActivity
 import com.example.tapplication.R
+import com.example.tapplication.ui.SwipeToDeleteCallback
 import com.example.tapplication.utils.*
 import kotlin.getValue
 
 class ListFragment: Fragment() {
+    companion object {
+        fun getInstance(isTwoPane: Boolean): ListFragment {
+            return ListFragment().apply {
+                arguments = createBundle(isTwoPane)
+            }
+        }
+
+        private fun createBundle(isTwoPane: Boolean): Bundle {
+            return Bundle().apply {
+                putBoolean("isTwoPane", isTwoPane)
+            }
+        }
+    }
 
     private val viewModel: MainViewModel by activityViewModels()
 
@@ -86,12 +101,20 @@ class ListFragment: Fragment() {
             }
         }
 
-        viewModel.scrollPosition.observe(viewLifecycleOwner) { position ->
+        val itemTouchHelper = ItemTouchHelper(
+            SwipeToDeleteCallback { position ->
+                viewModel.removeItem(position)
+            })
+        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
+
+
+
+    viewModel.scrollPosition.observe(viewLifecycleOwner) { position ->
             binding.recyclerView.scrollToPosition(position)
         }
 
         binding.fab.setOnClickListener {
-            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (isTwoPane) {
                 (activity as MainActivity).showAddForm()
             } else {
                 findNavController().navigate(
@@ -108,6 +131,8 @@ class ListFragment: Fragment() {
                 viewModel.saveScrollPosition(layoutManager.findFirstVisibleItemPosition())
             }
         })
+
+
     }
 
     override fun onDestroyView() {

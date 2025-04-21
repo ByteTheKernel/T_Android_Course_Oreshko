@@ -28,11 +28,11 @@ class LibraryAdapter(
         holder.bind(item, onItemClick)
 
         holder.itemView.setOnClickListener {
-            onItemClick(item) // открыть DetailsActivity
+            onItemClick(item)
         }
 
         holder.itemView.setOnLongClickListener {
-            onItemLongClick(item) // переключить доступность
+            onItemLongClick(item)
             true
         }
     }

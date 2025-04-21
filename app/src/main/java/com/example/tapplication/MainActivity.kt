@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.tapplication.databinding.ActivityMainBinding
 import com.example.tapplication.ui.fragments.AddFragment
+import com.example.tapplication.ui.fragments.DetailFragment
 import com.example.tapplication.ui.fragments.ListFragment
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.*
@@ -24,14 +26,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if(!isTwoPaneMode()) {
+        if (isTwoPaneMode()) {
+            setupTwoPaneMode()
+        } else {
             val navHostFragment = supportFragmentManager
                 .findFragmentById(R.id.navHostFragment) as NavHostFragment
             navController = navHostFragment.navController
-        }
-
-        if (isTwoPaneMode()) {
-            setupTwoPaneMode()
         }
 
         viewModel.selectedItemId.observe(this) { itemId ->
@@ -45,25 +45,25 @@ class MainActivity : AppCompatActivity() {
         return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
-    private fun setupTwoPaneMode() {
+    private fun replaceFragment(containerId: Int, fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(containerId, fragment)
+            .commit()
+    }
 
+    private fun setupTwoPaneMode() {
         if (supportFragmentManager.findFragmentById(R.id.listContainer) == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.listContainer, ListFragment().apply {
-                    arguments = Bundle().apply { putBoolean("isTwoPane", true) }
-                })
-                .commit()
+            replaceFragment(R.id.listContainer, ListFragment.getInstance(true))
         }
 
         viewModel.selectedItemId.observe(this) { itemId ->
             itemId?.let {
                 if (isTwoPaneMode()) {
-                    showDetail(binding, it)
+                    showDetail(it)
                 } else {
-                    // В книжной ориентации переходим к фрагменту с детальной информацией
                     findNavController(R.id.navHostFragment).navigate(
                         R.id.action_listFragment_to_detailFragment,
-                        Bundle().apply { putInt("itemId", it) }
+                        DetailFragment.createBundle(it, false)
                     )
                 }
             }
@@ -73,11 +73,14 @@ class MainActivity : AppCompatActivity() {
     fun showAddForm() {
         binding.detailContainer?.let { container ->
             container.visibility = View.VISIBLE
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.detailContainer, AddFragment().apply {
-                    arguments = Bundle().apply { putBoolean("isTwoPane", true) }
-                })
-                .commit()
+            replaceFragment(R.id.detailContainer, AddFragment.getInstance(true))
+        }
+    }
+
+    private fun showDetail(itemId: Int) {
+        binding.detailContainer?.let { container ->
+            container.visibility = View.VISIBLE
+            replaceFragment(R.id.detailContainer, DetailFragment.getInstance(itemId, true))
         }
     }
 
@@ -105,10 +108,14 @@ class MainActivity : AppCompatActivity() {
 
     internal fun hideDetail() {
         binding.detailContainer?.let { container ->
-            container.visibility = View.GONE
-            supportFragmentManager.beginTransaction()
-                .remove(supportFragmentManager.findFragmentById(R.id.detailContainer)!!)
-                .commit()
+            container.gone()
+
+            val fragment = supportFragmentManager.findFragmentById(R.id.detailContainer)
+            fragment?.let {
+                supportFragmentManager.beginTransaction()
+                    .remove(it)
+                    .commit()
+            }
         }
         viewModel.clearSelectedItem()
     }
