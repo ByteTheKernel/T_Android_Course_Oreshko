@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.tapplication.R
 import com.example.tapplication.databinding.FragmentDetailBinding
 import com.example.tapplication.library.*
@@ -17,25 +18,14 @@ import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.gone
 
 class DetailFragment : Fragment() {
-    companion object {
-        fun getInstance(itemId: Int, isTwoPane: Boolean): DetailFragment {
-            return DetailFragment().apply {
-                arguments = createBundle(itemId, isTwoPane)
-            }
-        }
 
-        internal fun createBundle(itemId: Int, isTwoPane: Boolean): Bundle {
-            return Bundle().apply {
-                putInt("itemId", itemId)
-                putBoolean("isTwoPane", isTwoPane)
-            }
-        }
-    }
+    private val args: DetailFragmentArgs by navArgs()
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
     private val viewModel: MainViewModel by activityViewModels()
-    private val itemId by lazy { arguments?.getInt("itemId") ?: 0 }
+    val itemId: Int by lazy { args.itemId }
+    val isTwoPane: Boolean by lazy { args.isTwoPane }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,11 +38,6 @@ class DetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val itemId = arguments?.getInt("itemId") ?: run {
-            Log.e("DetailFragment", "itemId is null")
-            return
-        }
 
         viewModel.getItemById(itemId)?.let { item ->
             bindItem(item)

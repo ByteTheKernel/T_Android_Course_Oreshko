@@ -22,29 +22,19 @@ import com.example.tapplication.ui.viewmodels.DetailsViewModel
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.ItemType
 import com.example.tapplication.utils.show
+import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.launch
 
 
 class AddFragment : Fragment() {
-    companion object {
-        fun getInstance(isTwoPane: Boolean): AddFragment {
-            return AddFragment().apply {
-                arguments = createBundle(isTwoPane)
-            }
-        }
 
-        private fun createBundle(isTwoPane: Boolean): Bundle {
-            return Bundle().apply {
-                putBoolean("isTwoPane", isTwoPane)
-            }
-        }
-    }
+    private val args: AddFragmentArgs by navArgs()
 
     private var _binding: FragmentAddBinding? = null
     private val binding get() = _binding!!
     private val detailsViewModel: DetailsViewModel by activityViewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
-    private var isTwoPane = Bundle().getBoolean("isTwoPane")
+    private val isTwoPane: Boolean by lazy { args.isTwoPane }
 
     override fun onCreateView(
         inflater: LayoutInflater,

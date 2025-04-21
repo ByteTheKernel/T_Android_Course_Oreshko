@@ -20,8 +20,10 @@ import com.example.tapplication.ui.LibraryAdapter
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.MainActivity
 import com.example.tapplication.R
+import com.example.tapplication.main
 import com.example.tapplication.ui.SwipeToDeleteCallback
 import com.example.tapplication.utils.*
+import com.facebook.shimmer.ShimmerFrameLayout
 import kotlin.getValue
 
 class ListFragment: Fragment() {
@@ -38,6 +40,8 @@ class ListFragment: Fragment() {
             }
         }
     }
+
+    private lateinit var shimmerLayout: ShimmerFrameLayout
 
     private val viewModel: MainViewModel by activityViewModels()
 
@@ -62,6 +66,8 @@ class ListFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        shimmerLayout = binding.shimmerLayout
 
         val adapter = LibraryAdapter(
             onItemClick = { item ->
@@ -91,6 +97,24 @@ class ListFragment: Fragment() {
                 viewModel.scrollPosition.value?.let { position ->
                     binding.recyclerView.scrollToPosition(position)
                 }
+            }
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading) {
+                shimmerLayout.startShimmer()
+                binding.shimmerLayout.show()
+                binding.recyclerView.gone()
+            } else {
+                shimmerLayout.stopShimmer()
+                shimmerLayout.gone()
+                binding.recyclerView.show()
+            }
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            if (!errorMessage.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "Error: $errorMessage", Toast.LENGTH_SHORT).show()
             }
         }
 

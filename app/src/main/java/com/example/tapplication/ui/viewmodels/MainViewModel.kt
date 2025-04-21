@@ -3,11 +3,17 @@ package com.example.tapplication.ui.viewmodels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.tapplication.library.Book
 import com.example.tapplication.library.Disk
 import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.library.Newspaper
 import com.example.tapplication.utils.Month
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.*
 
 class MainViewModel: ViewModel() {
     private val _items = MutableLiveData<List<LibraryItem>>()
@@ -22,18 +28,17 @@ class MainViewModel: ViewModel() {
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
 
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
     private val _scrollPosition = MutableLiveData<Int>()
     val scrollPosition: LiveData<Int> = _scrollPosition
 
     init {
-        _items.value = listOf(
-            Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
-            Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
-            Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
-            Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
-            Disk(301, true, "Интерстеллар", "DVD"),
-            Disk(302, true, "Пинк Флойд - The Wall", "CD")
-        )
+        loadItems()
     }
 
     fun addItem(newItem: LibraryItem) {
@@ -91,5 +96,44 @@ class MainViewModel: ViewModel() {
 
     fun restoreScrollPosition(): Int {
         return _scrollPosition.value ?: 0
+    }
+
+    private fun loadItems() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val loadedItems = withContext(Dispatchers.IO) {
+                    simulateNetworkOperation {
+                        generateDummyData()
+                    }
+                }
+                _items.value = loadedItems
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    private suspend fun <T> simulateNetworkOperation(block: () -> T): T {
+        delay((1000..2000).random().toLong())
+
+        if ((1..5).random() == 1) {
+            throw RuntimeException("Simulated error during data loading")
+        }
+
+        return block()
+    }
+
+    private fun generateDummyData(): List<LibraryItem> {
+        return listOf(
+            Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
+            Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
+            Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
+            Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
+            Disk(301, true, "Интерстеллар", "DVD"),
+            Disk(302, true, "Пинк Флойд - The Wall", "CD")
+        )
     }
 }
