@@ -1,67 +1,122 @@
 package com.example.tapplication
 
+import android.content.res.Configuration
 import android.os.Bundle
-import android.widget.Toast
+import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.fragment.app.Fragment
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import com.example.tapplication.databinding.ActivityMainBinding
-import com.example.tapplication.library.Book
-import com.example.tapplication.library.Disk
-import com.example.tapplication.library.LibraryItem
-import com.example.tapplication.library.Newspaper
-import com.example.tapplication.ui.LibraryAdapter
-import com.example.tapplication.ui.SwipeToDeleteCallback
-import com.example.tapplication.utils.Month
+import com.example.tapplication.ui.fragments.AddFragment
+import com.example.tapplication.ui.fragments.DetailFragment
+import com.example.tapplication.ui.fragments.ListFragment
+import com.example.tapplication.ui.viewmodels.MainViewModel
+import com.example.tapplication.utils.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var adapter: LibraryAdapter
-
-    private val libraryItems = mutableListOf<LibraryItem>(
-        Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
-        Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
-        Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
-        Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
-        Disk(301, true, "Интерстеллар", "DVD"),
-        Disk(302, true, "Пинк Флойд - The Wall", "CD")
-    )
+    private lateinit var navController: NavController
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = LibraryAdapter { item ->
-            updateAvailability(item)
+        if (isTwoPaneMode()) {
+            setupTwoPaneMode()
+        } else {
+            val navHostFragment = supportFragmentManager
+                .findFragmentById(R.id.navHostFragment) as NavHostFragment
+            navController = navHostFragment.navController
         }
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
-        adapter.submitList(libraryItems.toList())
-
-        val itemTouchHelper = ItemTouchHelper(
-            SwipeToDeleteCallback { position ->
-                libraryItems.removeAt(position)
-                adapter.submitList(libraryItems.toList())
-            })
-        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
-    }
-
-    private fun updateAvailability(item: LibraryItem) {
-        val index = libraryItems.indexOfFirst { it.id == item.id }
-        if (index != -1) {
-            val updatedItem = when (item) {
-                is Book -> item.copy(isAvailable = !item.isAvailable)
-                is Disk -> item.copy(isAvailable = !item.isAvailable)
-                is Newspaper -> item.copy(isAvailable = !item.isAvailable)
-                else -> item
+        viewModel.selectedItemId.observe(this) { itemId ->
+            itemId?.let {
+                showDetail(binding, it)
             }
-            libraryItems[index] = updatedItem
-            adapter.submitList(libraryItems.toList())
-            Toast.makeText(this, "Элемент с id #${item.id}", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun isTwoPaneMode(): Boolean {
+        return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
+
+    private fun replaceFragment(containerId: Int, fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(containerId, fragment)
+            .commit()
+    }
+
+    private fun setupTwoPaneMode() {
+        if (supportFragmentManager.findFragmentById(R.id.listContainer) == null) {
+            replaceFragment(R.id.listContainer, ListFragment.getInstance(true))
+        }
+
+        viewModel.selectedItemId.observe(this) { itemId ->
+            itemId?.let {
+                if (isTwoPaneMode()) {
+                    showDetail(it)
+                } else {
+                    findNavController(R.id.navHostFragment).navigate(
+                        R.id.action_listFragment_to_detailFragment,
+                        DetailFragment.createBundle(it, false)
+                    )
+                }
+            }
+        }
+    }
+
+    fun showAddForm() {
+        binding.detailContainer?.let { container ->
+            container.visibility = View.VISIBLE
+            replaceFragment(R.id.detailContainer, AddFragment.getInstance(true))
+        }
+    }
+
+    private fun showDetail(itemId: Int) {
+        binding.detailContainer?.let { container ->
+            container.visibility = View.VISIBLE
+            replaceFragment(R.id.detailContainer, DetailFragment.getInstance(itemId, true))
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        recreate()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return if (binding.detailContainer?.visibility == View.VISIBLE) {
+            hideDetail()
+            true
+        } else {
+            navController.navigateUp() || super.onSupportNavigateUp()
+        }
+    }
+
+    override fun onBackPressed() {
+        if (binding.detailContainer?.visibility == View.VISIBLE) {
+            hideDetail()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    internal fun hideDetail() {
+        binding.detailContainer?.let { container ->
+            container.gone()
+
+            val fragment = supportFragmentManager.findFragmentById(R.id.detailContainer)
+            fragment?.let {
+                supportFragmentManager.beginTransaction()
+                    .remove(it)
+                    .commit()
+            }
+        }
+        viewModel.clearSelectedItem()
+    }
 }
