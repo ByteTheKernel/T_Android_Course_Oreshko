@@ -1,21 +1,26 @@
 package com.example.tapplication.ui.viewmodels
 
+import android.app.Application
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tapplication.library.Book
-import com.example.tapplication.library.Disk
+import com.example.tapplication.R
+import com.example.tapplication.data.LibraryRepository
 import com.example.tapplication.library.LibraryItem
-import com.example.tapplication.library.Newspaper
-import com.example.tapplication.utils.Month
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.*
 
-class MainViewModel: ViewModel() {
+class MainViewModel(application: Application): AndroidViewModel(application) {
+
+    private val repository = LibraryRepository()
+
+    val itemsFlow: StateFlow<List<LibraryItem>> = repository.itemsFlow
+
     private val _items = MutableLiveData<List<LibraryItem>>()
     val items: LiveData<List<LibraryItem>> = _items
 
@@ -42,24 +47,44 @@ class MainViewModel: ViewModel() {
     }
 
     fun addItem(newItem: LibraryItem) {
-        val currentList = _items.value?.toMutableList() ?: mutableListOf()
-        currentList.add(newItem)
-        _items.value = currentList
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    repository.addItem(newItem)
+                }
+                _toastMessage.value = getApplication<Application>().getString(
+                    R.string.message_item_added
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _toastMessage.value = getApplication<Application>().getString(
+                    R.string.error_adding_item
+                )
+            }
+        }
     }
 
     fun updateItemAvailability(item: LibraryItem) {
-        val currentList = _items.value?.toMutableList() ?: return
-        val index = currentList.indexOfFirst { it.id == item.id }
-        if (index != -1) {
-            val updatedItem = when (item) {
-                is Book -> item.copy(isAvailable = !item.isAvailable)
-                is Disk -> item.copy(isAvailable = !item.isAvailable)
-                is Newspaper -> item.copy(isAvailable = !item.isAvailable)
-                else -> item
+        viewModelScope.launch {
+            try {
+                Log.d("MainViewModel", "Attempting to update item availability: ${item.id}")
+                val updateItem = withContext(Dispatchers.IO) {
+                    repository.updateItemAvailability(item)
+                }
+                if (updateItem != null) {
+                    _toastMessage.value = getApplication<Application>().getString(
+                        R.string.message_item_status_updated,
+                        item.id
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _toastMessage.value = getApplication<Application>().getString(
+                    R.string.error_updating_item_status
+                )
             }
-            currentList[index] = updatedItem
-            _items.value = currentList
-            _toastMessage.value = "Элемент с id #${item.id}"
         }
     }
 
@@ -68,13 +93,23 @@ class MainViewModel: ViewModel() {
     }
 
     fun removeItem(position: Int) {
-        val currentList = _items.value?.toMutableList() ?: return
-        currentList.removeAt(position)
-        _items.value = currentList
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    repository.removeItem(position)
+                }
+            } catch (e: CancellationException){
+                throw e
+            } catch (e: Exception) {
+                _toastMessage.value = getApplication<Application>().getString(
+                    R.string.error_removing_item
+                )
+            }
+        }
     }
 
     fun getItemById(itemId: Int): LibraryItem? {
-        return _items.value?.find { it.id == itemId }
+        return itemsFlow.value.find { it.id == itemId }
     }
 
     fun getSelectedItem(): LibraryItem? {
@@ -102,38 +137,18 @@ class MainViewModel: ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val loadedItems = withContext(Dispatchers.IO) {
-                    simulateNetworkOperation {
-                        generateDummyData()
-                    }
+                withContext(Dispatchers.IO) {
+                    repository.initializeIfNeeded()
                 }
-                _items.value = loadedItems
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _error.value = e.message
+                _error.value = getApplication<Application>().getString(
+                    R.string.error_loading_items
+                )
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    private suspend fun <T> simulateNetworkOperation(block: () -> T): T {
-        delay((1000..2000).random().toLong())
-
-        if ((1..5).random() == 1) {
-            throw RuntimeException("Simulated error during data loading")
-        }
-
-        return block()
-    }
-
-    private fun generateDummyData(): List<LibraryItem> {
-        return listOf(
-            Book(101, true, "Мастер и Маргарита", 500, "М. Булгаков"),
-            Book(102, true, "Преступление и наказание", 672, "Ф. Достоевский"),
-            Newspaper(201, true, "Коммерсант", 789, Month.MARCH),
-            Newspaper(202, true, "Известия", 1023, Month.FEBRUARY),
-            Disk(301, true, "Интерстеллар", "DVD"),
-            Disk(302, true, "Пинк Флойд - The Wall", "CD")
-        )
     }
 }

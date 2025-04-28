@@ -26,4 +26,10 @@
     <string name="newspaper_optional_attribute_label_1">Выпуск</string>
     <string name="newspaper_optional_attribute_label_2">Месяц</string>
     <string name="add_item">Добавление элемента</string>
+    <string name="error_loading_items">Что-то пошло не так, попробуйте позже</string>
+    <string name="message_item_added">Элемент добавлен</string>
+    <string name="error_adding_item">Ошибка добавления элемента</string>
+    <string name="message_item_status_updated">Статус элемента с id #%d изменен</string>
+    <string name="error_updating_item_status">Ошибка изменения статуса элемента</string>
+    <string name="error_removing_item">Ошибка при удалении элемента</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.example.tapplication.ui.fragments
 
-import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,23 +7,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.tapplication.databinding.FragmentListBinding
-import com.example.tapplication.ui.LibraryAdapter
-import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.MainActivity
 import com.example.tapplication.R
-import com.example.tapplication.main
+import com.example.tapplication.databinding.FragmentListBinding
+import com.example.tapplication.ui.LibraryAdapter
 import com.example.tapplication.ui.SwipeToDeleteCallback
-import com.example.tapplication.utils.*
-import com.facebook.shimmer.ShimmerFrameLayout
-import kotlin.getValue
+import com.example.tapplication.ui.viewmodels.MainViewModel
+import com.example.tapplication.utils.gone
+import com.example.tapplication.utils.show
+import kotlinx.coroutines.launch
 
 class ListFragment: Fragment() {
     companion object {
@@ -40,8 +37,6 @@ class ListFragment: Fragment() {
             }
         }
     }
-
-    private lateinit var shimmerLayout: ShimmerFrameLayout
 
     private val viewModel: MainViewModel by activityViewModels()
 
@@ -67,20 +62,17 @@ class ListFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        shimmerLayout = binding.shimmerLayout
-
         val adapter = LibraryAdapter(
             onItemClick = { item ->
                 if (isTwoPane) {
                     viewModel.selectItem(item)
                 } else {
-                    findNavController().navigate(
-                        R.id.action_listFragment_to_detailFragment,
-                        Bundle().apply { putInt("itemId", item.id) }
-                    )
+                    val action = ListFragmentDirections.actionListFragmentToDetailFragment(item.id)
+                    findNavController().navigate(action)
                 }
             },
             onItemLongClick = { item ->
+                Log.d("ListFragment", "Long click detected for item: ${item.id}")
                 viewModel.updateItemAvailability(item)
             }
         )
@@ -91,23 +83,25 @@ class ListFragment: Fragment() {
             setHasFixedSize(true)
         }
 
-        viewModel.items.observe(viewLifecycleOwner) { items ->
-            Log.d("ListFragment", "Items received: ${items.size}")
-            adapter.submitList(items) {
-                viewModel.scrollPosition.value?.let { position ->
-                    binding.recyclerView.scrollToPosition(position)
+        lifecycleScope.launch {
+            viewModel.itemsFlow.collect { items ->
+                Log.d("ListFragment", "Items received: ${items.size}")
+                adapter.submitList(items) {
+                    viewModel.scrollPosition.value?.let { position ->
+                        binding.recyclerView.scrollToPosition(position)
+                    }
                 }
             }
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading) {
-                shimmerLayout.startShimmer()
+                binding.shimmerLayout.startShimmer()
                 binding.shimmerLayout.show()
                 binding.recyclerView.gone()
             } else {
-                shimmerLayout.stopShimmer()
-                shimmerLayout.gone()
+                binding.shimmerLayout.stopShimmer()
+                binding.shimmerLayout.gone()
                 binding.recyclerView.show()
             }
         }
