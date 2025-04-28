@@ -11,8 +11,6 @@ import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.tapplication.databinding.ActivityMainBinding
-import com.example.tapplication.databinding.FragmentDetailBinding
-import com.example.tapplication.databinding.FragmentAddBinding
 import com.example.tapplication.ui.fragments.AddFragment
 import com.example.tapplication.ui.fragments.AddFragmentArgs
 import com.example.tapplication.ui.fragments.DetailFragment
