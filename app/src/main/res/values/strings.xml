@@ -5,6 +5,13 @@
         <item>Newspaper</item>
     </string-array>
 
+    <string name="sort_by_name">По наименованию</string>
+    <string name="sort_by_created_at">По дате добавления</string>
+    <string-array name="sort_options">
+        <item>@string/sort_by_name</item>
+        <item>@string/sort_by_created_at</item>
+    </string-array>
+
     <string name="app_name">TApplication</string>
     <string name="item_icon_content_description">Иконка элемента</string>
     <string name="item_id">ID: %d</string>
@@ -31,5 +38,10 @@
     <string name="error_adding_item">Ошибка добавления элемента</string>
     <string name="message_item_status_updated">Статус элемента с id #%d изменен</string>
     <string name="error_updating_item_status">Ошибка изменения статуса элемента</string>
+    <string name="message_item_removed">Элемент успешно удалён</string>
     <string name="error_removing_item">Ошибка при удалении элемента</string>
+    <string name="error_applying_sorting">Ошибка при применении сортировки</string>
+    <string name="error_next_page_loading">Ошибка при загрузке следующей страницы</string>
+    <string name="error_previous_page_loading">Ошибка при загрузке предыдущей страницы</string>
+    <string name="empty_data">Нет данных</string>
 </resources>

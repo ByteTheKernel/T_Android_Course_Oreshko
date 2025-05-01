@@ -25,6 +25,7 @@ class LibraryAdapter(
         position: Int
     ) {
         val item = getItem(position)
+        Log.d("LibraryAdapter", "Binding item at $position: ${item.name}")
         holder.bind(item, onItemClick)
 
         holder.itemView.setOnClickListener {
