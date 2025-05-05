@@ -10,9 +10,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
-import com.example.tapplication.data.AppDatabase
-import com.example.tapplication.data.LibraryRepository
-import com.example.tapplication.data.SettingsRepository
+import com.example.tapplication.data.local.AppDatabase
+import com.example.tapplication.data.network.RetrofitHelper
+import com.example.tapplication.data.repository.LibraryRepository
+import com.example.tapplication.data.repository.RemoteBooksRepository
+import com.example.tapplication.data.repository.SettingsRepository
 import com.example.tapplication.databinding.ActivityMainBinding
 import com.example.tapplication.ui.fragments.AddFragment
 import com.example.tapplication.ui.fragments.AddFragmentArgs
@@ -31,8 +33,9 @@ class MainActivity : AppCompatActivity() {
 
     val factory: MainViewModelFactory by lazy {
         val libraryRepository = LibraryRepository(AppDatabase.getDatabase(applicationContext).libraryDao())
+        val remoteBooksRepository = RemoteBooksRepository(RetrofitHelper.createRetrofit())
         val settingsRepository = SettingsRepository(applicationContext)
-        MainViewModelFactory(libraryRepository, settingsRepository)
+        MainViewModelFactory(libraryRepository, remoteBooksRepository, settingsRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
