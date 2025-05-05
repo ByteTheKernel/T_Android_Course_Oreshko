@@ -29,6 +29,11 @@
         <argument
             android:name="itemId"
             app:argType="integer" />
+
+        <argument
+            android:name="isTwoPane"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
 
     <fragment
@@ -36,6 +41,11 @@
         android:name="com.example.tapplication.ui.fragments.AddFragment"
         android:label="Add new Item"
         tools:layout="@layout/fragment_add">
+
+        <argument
+            android:name="isTwoPane"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
 
 </navigation>

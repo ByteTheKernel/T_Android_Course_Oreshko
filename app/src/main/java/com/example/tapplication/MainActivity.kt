@@ -6,25 +6,41 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
+import com.example.tapplication.data.AppDatabase
+import com.example.tapplication.data.LibraryRepository
+import com.example.tapplication.data.SettingsRepository
 import com.example.tapplication.databinding.ActivityMainBinding
 import com.example.tapplication.ui.fragments.AddFragment
+import com.example.tapplication.ui.fragments.AddFragmentArgs
 import com.example.tapplication.ui.fragments.DetailFragment
+import com.example.tapplication.ui.fragments.DetailFragmentArgs
 import com.example.tapplication.ui.fragments.ListFragment
+import com.example.tapplication.ui.fragments.ListFragmentDirections
 import com.example.tapplication.ui.viewmodels.MainViewModel
+import com.example.tapplication.ui.viewmodels.MainViewModelFactory
 import com.example.tapplication.utils.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
-    private val viewModel: MainViewModel by viewModels()
+    private lateinit var viewModel: MainViewModel
+
+    val factory: MainViewModelFactory by lazy {
+        val libraryRepository = LibraryRepository(AppDatabase.getDatabase(applicationContext).libraryDao())
+        val settingsRepository = SettingsRepository(applicationContext)
+        MainViewModelFactory(libraryRepository, settingsRepository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 
         if (isTwoPaneMode()) {
             setupTwoPaneMode()
@@ -62,8 +78,7 @@ class MainActivity : AppCompatActivity() {
                     showDetail(it)
                 } else {
                     findNavController(R.id.navHostFragment).navigate(
-                        R.id.action_listFragment_to_detailFragment,
-                        DetailFragment.createBundle(it, false)
+                        ListFragmentDirections.actionListFragmentToDetailFragment(itemId = it, isTwoPane = true)
                     )
                 }
             }
@@ -71,16 +86,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun showAddForm() {
-        binding.detailContainer?.let { container ->
-            container.visibility = View.VISIBLE
-            replaceFragment(R.id.detailContainer, AddFragment.getInstance(true))
+        if (isTwoPaneMode()) {
+            binding.detailContainer?.let { container ->
+                container.show()
+
+                val args = AddFragmentArgs(true).toBundle()
+                val fragment = AddFragment().apply {
+                    arguments = args
+                }
+                replaceFragment(R.id.detailContainer, fragment)
+            }
+        } else {
+            findNavController(R.id.navHostFragment).navigate(
+                ListFragmentDirections.actionListFragmentToAddFragment(isTwoPane = false)
+            )
         }
     }
 
     private fun showDetail(itemId: Int) {
-        binding.detailContainer?.let { container ->
-            container.visibility = View.VISIBLE
-            replaceFragment(R.id.detailContainer, DetailFragment.getInstance(itemId, true))
+        if (isTwoPaneMode()) {
+            binding.detailContainer?.let { container ->
+                container.show()
+
+               val args = DetailFragmentArgs(itemId, true).toBundle()
+                val fragment = DetailFragment().apply {
+                    arguments = args
+                }
+                replaceFragment(R.id.detailContainer, fragment)
+            }
+        } else {
+            findNavController(R.id.navHostFragment).navigate(
+                ListFragmentDirections.actionListFragmentToDetailFragment(itemId = itemId, isTwoPane = false)
+            )
         }
     }
 
@@ -119,4 +156,6 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.clearSelectedItem()
     }
+
+    fun getMainViewModelFactory(): MainViewModelFactory = factory
 }
