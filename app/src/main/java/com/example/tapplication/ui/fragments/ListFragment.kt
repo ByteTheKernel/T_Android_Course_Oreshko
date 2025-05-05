@@ -38,7 +38,9 @@ class ListFragment: Fragment() {
         }
     }
 
-    private val viewModel: MainViewModel by activityViewModels()
+    private val viewModel: MainViewModel by activityViewModels{
+        (requireActivity() as MainActivity).getMainViewModelFactory()
+    }
 
     private var _binding: FragmentListBinding? = null
     private val binding get() = _binding!!
@@ -136,23 +138,9 @@ class ListFragment: Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             Log.d("ListFragment", "isLoading changed to: $isLoading")
             if (isLoading) {
-                shimmerLayout.startShimmer()
-                shimmerLayout.show()
-                sortSpinner.gone()
-                recyclerView.gone()
-                emptyStateTextView.gone()
+                showLoadingState()
             } else {
-                shimmerLayout.stopShimmer()
-                shimmerLayout.gone()
-                if (viewModel.items.value?.isEmpty() == true) {
-                    recyclerView.gone()
-                    sortSpinner.gone()
-                    emptyStateTextView.show()
-                } else {
-                    recyclerView.show()
-                    emptyStateTextView.gone()
-                    sortSpinner.show()
-                }
+                showContentState()
             }
         }
 
@@ -167,14 +155,12 @@ class ListFragment: Fragment() {
 
     private fun setupMessageObservers() {
         viewModel.error.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "Error: $it", Toast.LENGTH_SHORT).show()
-            }
+            Toast.makeText(requireContext(), "Error: ${it?.asString(requireContext())}", Toast.LENGTH_SHORT).show()
         }
 
         viewModel.toastMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), it.asString(requireContext()), Toast.LENGTH_SHORT).show()
                 viewModel.onToastShown()
             }
         }
@@ -225,6 +211,28 @@ class ListFragment: Fragment() {
                 viewModel.saveScrollPosition(layoutManager.findFirstVisibleItemPosition())
             }
         })
+    }
+
+    private fun showLoadingState() = with(binding) {
+        shimmerLayout.startShimmer()
+        shimmerLayout.show()
+        sortSpinner.gone()
+        recyclerView.gone()
+        emptyStateTextView.gone()
+    }
+
+    private fun showContentState() = with(binding) {
+        shimmerLayout.stopShimmer()
+        shimmerLayout.gone()
+        if (viewModel.items.value?.isEmpty() == true) {
+            recyclerView.gone()
+            sortSpinner.gone()
+            emptyStateTextView.show()
+        } else {
+            recyclerView.show()
+            emptyStateTextView.gone()
+            sortSpinner.show()
+        }
     }
 
 

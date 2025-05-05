@@ -9,6 +9,10 @@ data class LibraryItemEntity(
     val type: String,
     val name: String,
     val isAvailable: Boolean,
-    val details: String,
+    val pages: Int?,
+    val author: String?,
+    val issueNumber: Int?,
+    val month: String?,
+    val diskType: String?,
     val createdAt: Long
 )

@@ -33,7 +33,9 @@ class AddFragment : Fragment() {
     private var _binding: FragmentAddBinding? = null
     private val binding get() = _binding!!
     private val detailsViewModel: DetailsViewModel by activityViewModels()
-    private val mainViewModel: MainViewModel by activityViewModels()
+    private val mainViewModel: MainViewModel by activityViewModels {
+        (requireActivity() as MainActivity).getMainViewModelFactory()
+    }
     private val isTwoPane: Boolean by lazy { args.isTwoPane }
 
     override fun onCreateView(

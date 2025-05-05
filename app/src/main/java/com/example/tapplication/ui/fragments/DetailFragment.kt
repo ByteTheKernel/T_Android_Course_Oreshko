@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.tapplication.MainActivity
 import com.example.tapplication.R
 import com.example.tapplication.databinding.FragmentDetailBinding
 import com.example.tapplication.library.*
@@ -23,7 +24,9 @@ class DetailFragment : Fragment() {
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: MainViewModel by activityViewModels()
+    private val viewModel: MainViewModel by activityViewModels {
+        (requireActivity() as MainActivity).getMainViewModelFactory()
+    }
     val itemId: Int by lazy { args.itemId }
     val isTwoPane: Boolean by lazy { args.isTwoPane }
 

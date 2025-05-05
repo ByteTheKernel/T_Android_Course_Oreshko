@@ -1,27 +1,25 @@
 package com.example.tapplication.ui.viewmodels
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tapplication.R
-import com.example.tapplication.data.AppDatabase
 import com.example.tapplication.data.LibraryRepository
 import com.example.tapplication.data.SettingsRepository
 import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.utils.SortOrder
+import com.example.tapplication.utils.UiText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainViewModel(application: Application): AndroidViewModel(application) {
-
-    private val database = AppDatabase.getDatabase(application)
-    private val repository = LibraryRepository(database.libraryDao())
-    private val settingsRepository = SettingsRepository(application)
+class MainViewModel(
+    private val libraryRepository: LibraryRepository,
+    private val settingsRepository: SettingsRepository
+): ViewModel() {
 
     private val _items = MutableLiveData<List<LibraryItem>>()
     val items: LiveData<List<LibraryItem>> = _items
@@ -32,11 +30,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val _selectedItemId = MutableLiveData<Int?>()
     val selectedItemId: LiveData<Int?> = _selectedItemId
 
-    private val _toastMessage = MutableLiveData<String?>()
-    val toastMessage: LiveData<String?> = _toastMessage
+    private val _toastMessage = MutableLiveData<UiText?>()
+    val toastMessage: LiveData<UiText?> = _toastMessage
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableLiveData<UiText?>()
+    val error: LiveData<UiText?> = _error
 
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -50,12 +48,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val _scrollPosition = MutableLiveData<Int>()
     val scrollPosition: LiveData<Int> = _scrollPosition
 
+    private val pageSize = 30
     private var currentPage = 0
     private var currentSortOrder = getSavedSortOrder()
-    private val pageSize = 30
 
     init {
-        loadInitialData(currentSortOrder)
+        loadData(currentPage, currentSortOrder)
     }
 
     fun loadItemsForScroll(firstVisibleItemPosition: Int, lastVisibleItemPosition: Int) {
@@ -73,7 +71,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             } catch (e: CancellationException) {
               throw e
             } catch (e: Exception) {
-                _error.value = getApplication<Application>().getString(
+                _error.value = UiText.from(
                     R.string.error_loading_items
                 )
             } finally {
@@ -86,18 +84,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    repository.addItem(newItem)
+                    libraryRepository.addItem(newItem)
                 }
-                _toastMessage.value = getApplication<Application>().getString(
-                    R.string.message_item_added
-                )
-                refreshData()
+                _toastMessage.value = UiText.from(R.string.message_item_added)
+                loadData()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _toastMessage.value = getApplication<Application>().getString(
-                    R.string.error_adding_item
-                )
+                _toastMessage.value = UiText.from(R.string.error_adding_item)
             }
         }
     }
@@ -107,7 +101,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             try {
                 Log.d("MainViewModel", "Attempting to update item availability: ${item.id}")
                 val updateItem = withContext(Dispatchers.IO) {
-                    repository.updateItemAvailability(item)
+                    libraryRepository.updateItemAvailability(item)
                 }
                 if (updateItem != null) {
                     val currentItems = _items.value.orEmpty().toMutableList()
@@ -118,14 +112,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     }
                 }
 
-                _toastMessage.value = getApplication<Application>().getString(
+                _toastMessage.value = UiText.from(
                     R.string.message_item_status_updated,
                     item.id
                 )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _toastMessage.value = getApplication<Application>().getString(
+                _toastMessage.value = UiText.from(
                     R.string.error_updating_item_status
                 )
             }
@@ -140,7 +134,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val remove = withContext(Dispatchers.IO) {
-                    repository.removeItem(itemId)
+                    libraryRepository.removeItem(itemId)
                 }
                 if (remove) {
                     val currentItems = _items.value.orEmpty().toMutableList()
@@ -151,34 +145,38 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     }
                 }
 
-                _toastMessage.value = getApplication<Application>().getString(
+                _toastMessage.value = UiText.from(
                     R.string.message_item_removed
                 )
             } catch (e: CancellationException){
                 throw e
             } catch (e: Exception) {
-                _toastMessage.value = getApplication<Application>().getString(
+                _toastMessage.value = UiText.from(
                     R.string.error_removing_item
                 )
             }
         }
     }
 
-    fun setSortOrder(sortOrder: SortOrder) {
+    fun setSortOrder(newSortOrder: SortOrder) {
+        if (newSortOrder == currentSortOrder) return
+
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                settingsRepository.saveSortOrders(sortOrder)
+                currentSortOrder = newSortOrder
+                currentPage = 0
+                settingsRepository.saveSortOrders(newSortOrder)
 
                 val items = withContext(Dispatchers.IO) {
-                    repository.loadInitialData(sortOrder)
+                    libraryRepository.getData(currentPage, currentSortOrder)
                 }
                 _items.value = items
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.d("MainViewModel", "SortOrder exception", e)
-                _error.value = getApplication<Application>().getString(
+                _error.value = UiText.from(
                     R.string.error_applying_sorting
                 )
             } finally {
@@ -188,8 +186,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     private suspend fun loadNextPage() {
+        val nextPage = currentPage++
         val nextPageItems = withContext(Dispatchers.IO) {
-            repository.loadNextPage()
+            libraryRepository.getData(nextPage, currentSortOrder)
         }
         val currentItems = _items.value.orEmpty()
 
@@ -201,8 +200,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     private suspend fun loadPreviousPage() {
+        val previousPage = currentPage--
+        if(previousPage < 0) return
+
         val previousPageItems = withContext(Dispatchers.IO) {
-            repository.loadPreviousPage()
+            libraryRepository.getData(previousPage, currentSortOrder)
         }
         val currentItems = _items.value.orEmpty()
 
@@ -238,14 +240,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return _scrollPosition.value ?: 0
     }
 
-    internal fun loadInitialData(sortOrder: SortOrder) {
+    internal fun loadData(page: Int = 0, sortOrder: SortOrder = currentSortOrder) {
         viewModelScope.launch {
             Log.d("MainViewModel", "Starting data loading...")
             _isLoading.value = true
             try {
                 val items = withContext(Dispatchers.IO) {
                     Log.d("MainViewModel", "Calling repository.loadInitialData")
-                    repository.loadInitialData(sortOrder)
+                    libraryRepository.getData(page, sortOrder)
                 }
                 _items.value = items
                 _initialLoadDone.value = true
@@ -255,31 +257,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 throw e
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error during data loading", e)
-                _error.value = getApplication<Application>().getString(
+                _error.value = UiText.from(
                     R.string.error_loading_items
                 )
             } finally {
                 Log.d("MainViewModel", "Finally block reached")
-                _isLoading.value = false
-            }
-        }
-    }
-
-    private fun refreshData() {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val items = withContext(Dispatchers.IO) {
-                    repository.loadInitialData()
-                }
-                _items.value = items
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _error.value = getApplication<Application>().getString(
-                    R.string.error_loading_items
-                )
-            } finally {
                 _isLoading.value = false
             }
         }

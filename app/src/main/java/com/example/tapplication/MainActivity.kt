@@ -10,6 +10,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
+import com.example.tapplication.data.AppDatabase
+import com.example.tapplication.data.LibraryRepository
+import com.example.tapplication.data.SettingsRepository
 import com.example.tapplication.databinding.ActivityMainBinding
 import com.example.tapplication.ui.fragments.AddFragment
 import com.example.tapplication.ui.fragments.AddFragmentArgs
@@ -18,6 +21,7 @@ import com.example.tapplication.ui.fragments.DetailFragmentArgs
 import com.example.tapplication.ui.fragments.ListFragment
 import com.example.tapplication.ui.fragments.ListFragmentDirections
 import com.example.tapplication.ui.viewmodels.MainViewModel
+import com.example.tapplication.ui.viewmodels.MainViewModelFactory
 import com.example.tapplication.utils.*
 
 class MainActivity : AppCompatActivity() {
@@ -25,15 +29,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var viewModel: MainViewModel
 
+    val factory: MainViewModelFactory by lazy {
+        val libraryRepository = LibraryRepository(AppDatabase.getDatabase(applicationContext).libraryDao())
+        val settingsRepository = SettingsRepository(applicationContext)
+        MainViewModelFactory(libraryRepository, settingsRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        )[MainViewModel::class.java]
+        viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 
         if (isTwoPaneMode()) {
             setupTwoPaneMode()
@@ -149,4 +156,6 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.clearSelectedItem()
     }
+
+    fun getMainViewModelFactory(): MainViewModelFactory = factory
 }

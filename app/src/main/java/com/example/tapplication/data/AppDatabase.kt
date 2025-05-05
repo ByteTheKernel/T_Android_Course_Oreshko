@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [LibraryItemEntity::class], version = 1)
+@Database(entities = [LibraryItemEntity::class], version = 2)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun libraryDao(): LibraryDao
 
@@ -15,13 +15,13 @@ abstract class AppDatabase: RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "library_database"
-                ).build()
-                INSTANCE = instance
-                instance
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build().also { INSTANCE = it }
             }
         }
     }
