@@ -1,4 +1,4 @@
-package com.example.tapplication.data
+package com.example.tapplication.data.local
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase

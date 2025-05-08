@@ -1,10 +1,12 @@
 package com.example.tapplication.ui
 
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.tapplication.R
 import com.example.tapplication.databinding.ItemLibraryBinding
 import com.example.tapplication.library.*
 import com.example.tapplication.library.LibraryItem
+import com.example.tapplication.utils.sanitizeImageUrl
 
 class LibraryViewHolder(private val binding: ItemLibraryBinding): RecyclerView.ViewHolder(binding.root) {
 
@@ -18,14 +20,21 @@ class LibraryViewHolder(private val binding: ItemLibraryBinding): RecyclerView.V
     }
 
     private fun setIcon(item: LibraryItem) {
-        binding.itemIcon.setImageResource(
-            when(item) {
-                is Book -> R.drawable.book_svg
-                is Newspaper -> R.drawable.newspaper_svg
-                is Disk -> R.drawable.disk_svg
-                else -> R.drawable.unknown_svg
-            }
-        )
+        val defaultIcon = when(item) {
+            is Book -> R.drawable.book_svg
+            is Newspaper -> R.drawable.newspaper_svg
+            is Disk -> R.drawable.disk_svg
+            else -> R.drawable.unknown_svg
+        }
+
+        val iconUrl = sanitizeImageUrl((item as? Book)?.iconUrl)
+
+        Glide.with(binding.itemIcon.context)
+            .load(iconUrl)
+            .placeholder(defaultIcon)
+            .error(defaultIcon)
+            .into(binding.itemIcon)
+
     }
 
     private fun setStyle(item: LibraryItem, onItemClick: (LibraryItem) -> Unit) {

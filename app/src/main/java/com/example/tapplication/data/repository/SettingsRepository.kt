@@ -1,8 +1,8 @@
-package com.example.tapplication.data
+package com.example.tapplication.data.repository
 
 import android.content.Context
-import com.example.tapplication.utils.SortOrder
 import androidx.core.content.edit
+import com.example.tapplication.utils.SortOrder
 
 class SettingsRepository(context: Context) {
 
@@ -19,7 +19,7 @@ class SettingsRepository(context: Context) {
 
     fun getSortOrder(): SortOrder {
         val value = prefs.getString(KEY_SORT_ORDER, SortOrder.CREATED_AT.name) ?: SortOrder.CREATED_AT.name
-        return SortOrder.fromString(value)
+        return SortOrder.Companion.fromString(value)
     }
 
 }

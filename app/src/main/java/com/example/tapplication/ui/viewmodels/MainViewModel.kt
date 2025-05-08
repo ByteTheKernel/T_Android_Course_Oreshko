@@ -6,8 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tapplication.R
-import com.example.tapplication.data.LibraryRepository
-import com.example.tapplication.data.SettingsRepository
+import com.example.tapplication.data.repository.LibraryRepository
+import com.example.tapplication.data.repository.RemoteBooksRepository
+import com.example.tapplication.data.repository.SettingsRepository
 import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.utils.SortOrder
 import com.example.tapplication.utils.UiText
@@ -15,11 +16,18 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.PI
 
 class MainViewModel(
     private val libraryRepository: LibraryRepository,
+    private val remoteBooksRepository: RemoteBooksRepository,
     private val settingsRepository: SettingsRepository
 ): ViewModel() {
+
+    enum class Tab { LIBRARY, GOOGLE_BOOKS }
+
+    private val _selectedTab = MutableLiveData(Tab.LIBRARY)
+    val selectedTab: LiveData<Tab> = _selectedTab
 
     private val _items = MutableLiveData<List<LibraryItem>>()
     val items: LiveData<List<LibraryItem>> = _items
@@ -56,17 +64,37 @@ class MainViewModel(
         loadData(currentPage, currentSortOrder)
     }
 
+    fun selectTab(tab: Tab) {
+        if (_selectedTab.value == tab) return
+
+        _selectedTab.value = tab
+        _items.value = emptyList()
+        _scrollPosition.value = 0
+
+        if (tab == Tab.LIBRARY) {
+            currentPage = 0
+            loadData(currentPage, currentSortOrder)
+        }
+    }
+
     fun loadItemsForScroll(firstVisibleItemPosition: Int, lastVisibleItemPosition: Int) {
         viewModelScope.launch {
             try {
                 _isScrollLoading.value = true
 
-                if (lastVisibleItemPosition >= (_items.value?.size ?: 0) - 10) {
-                    loadNextPage()
-                }
+                val currentTab = _selectedTab.value
 
-                if (firstVisibleItemPosition <= 10 && currentPage > 0) {
-                    loadPreviousPage()
+                when(currentTab) {
+                    Tab.LIBRARY -> {
+                        if (lastVisibleItemPosition >= (_items.value?.size ?: 0) - 10) {
+                            loadNextPage()
+                        }
+
+                        if (firstVisibleItemPosition <= 10 && currentPage > 0) {
+                            loadPreviousPage()
+                        }
+                    }
+                    else -> {}
                 }
             } catch (e: CancellationException) {
               throw e
@@ -266,6 +294,44 @@ class MainViewModel(
             }
         }
     }
+
+    fun searchBooksOnline(title: String?, author: String?) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val results = withContext(Dispatchers.IO) {
+                    remoteBooksRepository.searchBooksOnline(title, author)
+                }
+                Log.d("MainViewModel:searchBooksOnline", "results: $results")
+                _items.value = results
+                Log.d("MainViewModel:searchBooksOnline", "_items.value = items: ${_items.value?.size}")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _error.value = UiText.from(
+                    R.string.error_loading_items
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun saveGoogleBookToLibrary(item: LibraryItem) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    libraryRepository.addItem(item)
+                }
+                _toastMessage.value = UiText.from(R.string.message_item_added)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _toastMessage.value = UiText.from(R.string.error_adding_item)
+            }
+        }
+    }
+
 
     fun getSavedSortOrder(): SortOrder {
         return settingsRepository.getSortOrder()

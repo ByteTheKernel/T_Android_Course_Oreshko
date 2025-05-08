@@ -1,7 +1,11 @@
-package com.example.tapplication.data
+package com.example.tapplication.data.local
 
-import androidx.room.*
-import kotlinx.coroutines.flow.Flow
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.tapplication.data.local.LibraryItemEntity
 
 @Dao
 interface LibraryDao {
@@ -11,7 +15,7 @@ interface LibraryDao {
     @Query("SELECT * FROM library_items ORDER BY createdAt DESC LIMIT :limit OFFSET :offset")
     fun getItemsByCreatedAt(limit: Int, offset: Int): List<LibraryItemEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(item: LibraryItemEntity)
 
     @Delete

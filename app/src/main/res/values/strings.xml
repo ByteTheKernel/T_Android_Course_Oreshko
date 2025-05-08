@@ -44,4 +44,9 @@
     <string name="error_next_page_loading">Ошибка при загрузке следующей страницы</string>
     <string name="error_previous_page_loading">Ошибка при загрузке предыдущей страницы</string>
     <string name="empty_data">Нет данных</string>
+    <string name="tab_library_header">Библиотека</string>
+    <string name="tab_google_books_header">Google Books</string>
+    <string name="filter_author">Автор</string>
+    <string name="filter_name">Название</string>
+    <string name="filter_search">Поиск</string>
 </resources>
