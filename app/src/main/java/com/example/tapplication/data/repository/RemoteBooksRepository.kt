@@ -3,13 +3,17 @@ package com.example.tapplication.data.repository
 import android.util.Log
 import com.example.tapplication.data.network.GoogleBooksApi
 import com.example.tapplication.data.network.GoogleBooksItemMapper
-import com.example.tapplication.library.Book
 import com.example.tapplication.library.LibraryItem
 
 class RemoteBooksRepository(
     private val api: GoogleBooksApi
 ) {
     suspend fun searchBooksOnline(title: String?, author: String?): List<LibraryItem> {
+        if (title.isNullOrBlank() && author.isNullOrBlank()) {
+            Log.w("RemoteBooksRepository", "Empty title and author — skipping request")
+            return emptyList()
+        }
+
         val query = buildString {
             if (!title.isNullOrBlank()) append("intitle:$title ")
             if (!author.isNullOrBlank()) append("inauthor:$author")
@@ -26,7 +30,7 @@ class RemoteBooksRepository(
 
         } catch (e: Exception) {
             Log.e("RemoteBooksRepository", "Error loading books", e)
-            emptyList()
+            throw e
         }
     }
 

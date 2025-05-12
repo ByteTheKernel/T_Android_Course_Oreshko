@@ -18,7 +18,6 @@ import com.example.tapplication.library.*
 import com.example.tapplication.library.LibraryItem
 import com.example.tapplication.ui.viewmodels.MainViewModel
 import com.example.tapplication.utils.gone
-import com.example.tapplication.utils.sanitizeImageUrl
 
 class DetailFragment : Fragment() {
 
@@ -84,7 +83,7 @@ class DetailFragment : Fragment() {
             libraryItemOptionalAttributeLabel2.hint = getString(R.string.book_optional_attribute_label_2)
             libraryItemOptionalAttributeInput2.setText(book.pages.toString())
 
-            val iconUrl = sanitizeImageUrl(book.iconUrl)
+            val iconUrl = book.iconUrl
 
             if(!iconUrl.isNullOrEmpty()) {
                 Glide.with(itemDetailIcon.context)

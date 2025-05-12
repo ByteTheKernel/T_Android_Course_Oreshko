@@ -6,7 +6,6 @@ import com.example.tapplication.R
 import com.example.tapplication.databinding.ItemLibraryBinding
 import com.example.tapplication.library.*
 import com.example.tapplication.library.LibraryItem
-import com.example.tapplication.utils.sanitizeImageUrl
 
 class LibraryViewHolder(private val binding: ItemLibraryBinding): RecyclerView.ViewHolder(binding.root) {
 
@@ -20,21 +19,34 @@ class LibraryViewHolder(private val binding: ItemLibraryBinding): RecyclerView.V
     }
 
     private fun setIcon(item: LibraryItem) {
-        val defaultIcon = when(item) {
-            is Book -> R.drawable.book_svg
-            is Newspaper -> R.drawable.newspaper_svg
-            is Disk -> R.drawable.disk_svg
-            else -> R.drawable.unknown_svg
+        when (item) {
+            is Book -> {
+                val iconUrl = item.iconUrl
+                val placeholder = R.drawable.book_svg
+
+                if (!iconUrl.isNullOrEmpty()) {
+                    Glide.with(binding.itemIcon.context)
+                        .load(iconUrl)
+                        .placeholder(placeholder)
+                        .error(placeholder)
+                        .into(binding.itemIcon)
+                } else {
+                    binding.itemIcon.setImageResource(placeholder)
+                }
+            }
+
+            is Newspaper -> {
+                binding.itemIcon.setImageResource(R.drawable.newspaper_svg)
+            }
+
+            is Disk -> {
+                binding.itemIcon.setImageResource(R.drawable.disk_svg)
+            }
+
+            else -> {
+                binding.itemIcon.setImageResource(R.drawable.unknown_svg)
+            }
         }
-
-        val iconUrl = sanitizeImageUrl((item as? Book)?.iconUrl)
-
-        Glide.with(binding.itemIcon.context)
-            .load(iconUrl)
-            .placeholder(defaultIcon)
-            .error(defaultIcon)
-            .into(binding.itemIcon)
-
     }
 
     private fun setStyle(item: LibraryItem, onItemClick: (LibraryItem) -> Unit) {
