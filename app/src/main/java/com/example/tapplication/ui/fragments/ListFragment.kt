@@ -1,6 +1,8 @@
 package com.example.tapplication.ui.fragments
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +21,7 @@ import com.example.tapplication.databinding.FragmentListBinding
 import com.example.tapplication.ui.LibraryAdapter
 import com.example.tapplication.ui.SwipeToDeleteCallback
 import com.example.tapplication.ui.viewmodels.MainViewModel
+import com.example.tapplication.ui.viewmodels.MainViewModel.Tab
 import com.example.tapplication.utils.SortOrder
 import com.example.tapplication.utils.gone
 import com.example.tapplication.utils.show
@@ -68,6 +71,8 @@ class ListFragment: Fragment() {
         setupUiStateObservers(adapter)
         setupMessageObservers()
         setupSortSpinner()
+        setupLibraryButton()
+        setupGoogleBooksButton()
         setupSwipeToDelete(adapter)
         setupFab()
         setupScrollSaveListener()
@@ -85,7 +90,11 @@ class ListFragment: Fragment() {
             },
             onItemLongClick = { item ->
                 Log.d("ListFragment", "Long click detected for item: ${item.id}")
-                viewModel.updateItemAvailability(item)
+                when (viewModel.selectedTab.value) {
+                    Tab.LIBRARY -> viewModel.updateItemAvailability(item)
+                    Tab.GOOGLE_BOOKS -> viewModel.saveGoogleBookToLibrary(item)
+                    else -> null
+                }
             }
         )
 
@@ -114,6 +123,20 @@ class ListFragment: Fragment() {
             Log.d("ListFragment", "Initial data loaded")
         }
 
+        viewModel.selectedTab.observe(viewLifecycleOwner) { tab ->
+            when (tab) {
+                MainViewModel.Tab.LIBRARY -> {
+                    googleBooksFilterLayout.root.gone()
+                    sortSpinner.show()
+                }
+                MainViewModel.Tab.GOOGLE_BOOKS -> {
+                    val shouldShowFilters = !viewModel.items.value.isNullOrEmpty()
+                    sortSpinner.gone()
+                    googleBooksFilterLayout.root.takeIf { shouldShowFilters }?.show()
+                }
+            }
+        }
+
         viewModel.items.observe(viewLifecycleOwner) { items ->
             Log.d("ListFragment", "Items received: ${items.size}")
 
@@ -131,7 +154,11 @@ class ListFragment: Fragment() {
 
             adapter.submitList(items) {
                 Log.d("ListFragment", "Adapter updated with ${items.size} items")
-                viewModel.scrollPosition.value?.let { recyclerView.smoothScrollToPosition(it) }
+                viewModel.scrollPosition.value?.let { position ->
+                    if (position in 0 until adapter.itemCount) {
+                        recyclerView.smoothScrollToPosition(position)
+                    }
+                }
             }
         }
 
@@ -148,8 +175,10 @@ class ListFragment: Fragment() {
             if (it == true) loadMoreProgress.show() else loadMoreProgress.gone()
         }
 
-        viewModel.scrollPosition.observe(viewLifecycleOwner) {
-            recyclerView.smoothScrollToPosition(it)
+        viewModel.scrollPosition.observe(viewLifecycleOwner) { position ->
+            if (position in 0 until adapter.itemCount) {
+                recyclerView.smoothScrollToPosition(position)
+            }
         }
     }
 
@@ -180,6 +209,43 @@ class ListFragment: Fragment() {
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupLibraryButton() = with(binding) {
+        libraryButton.setOnClickListener {
+            viewModel.selectTab(MainViewModel.Tab.LIBRARY)
+        }
+
+    }
+
+    private fun setupGoogleBooksButton() = with(binding) {
+        googleBooksButton.setOnClickListener {
+            viewModel.selectTab(MainViewModel.Tab.GOOGLE_BOOKS)
+
+            with(googleBooksFilterLayout) {
+                val watcher = object : TextWatcher {
+                    override fun afterTextChanged(s: Editable?) {
+                        val title = titleEditText.text.toString()
+                        val author = authorEditText.text.toString()
+
+                        viewModel.searchTitle.value = title
+                        viewModel.searchAuthor.value = author
+
+                        searchButton.isEnabled = title.length >= 3 || author.length >= 3
+                    }
+
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                }
+
+                titleEditText.addTextChangedListener(watcher)
+                authorEditText.addTextChangedListener(watcher)
+
+                searchButton.setOnClickListener {
+                    viewModel.searchBooksOnline()
+                }
+            }
         }
     }
 
@@ -219,19 +285,33 @@ class ListFragment: Fragment() {
         sortSpinner.gone()
         recyclerView.gone()
         emptyStateTextView.gone()
+        googleBooksFilterLayout.root.gone()
     }
 
     private fun showContentState() = with(binding) {
         shimmerLayout.stopShimmer()
         shimmerLayout.gone()
-        if (viewModel.items.value?.isEmpty() == true) {
-            recyclerView.gone()
-            sortSpinner.gone()
-            emptyStateTextView.show()
-        } else {
-            recyclerView.show()
-            emptyStateTextView.gone()
-            sortSpinner.show()
+
+        viewModel.uiState.observe(viewLifecycleOwner) { state ->
+            if (state.isItemListEmpty) {
+                recyclerView.gone()
+                sortSpinner.gone()
+                emptyStateTextView.show()
+            } else {
+                recyclerView.show()
+                emptyStateTextView.gone()
+                if (state.selectedTab == MainViewModel.Tab.LIBRARY) {
+                    sortSpinner.show()
+                } else {
+                    sortSpinner.gone()
+                }
+            }
+
+            if (state.selectedTab == MainViewModel.Tab.GOOGLE_BOOKS && state.isItemListEmpty) {
+                googleBooksFilterLayout.root.show()
+            } else {
+                googleBooksFilterLayout.root.gone()
+            }
         }
     }
 

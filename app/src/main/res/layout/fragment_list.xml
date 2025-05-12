@@ -4,6 +4,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Tabs (Библиотека / Google Books) -->
+    <LinearLayout
+        android:id="@+id/tabsLayout"
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/libraryButton"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tab_library_header" />
+
+        <Button
+            android:id="@+id/googleBooksButton"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tab_google_books_header" />
+    </LinearLayout>
+
     <!-- Spinner -->
     <Spinner
         android:id="@+id/sortSpinner"
@@ -13,9 +41,22 @@
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:spinnerMode="dropdown"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabsLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Google Books Filters (только для Google Books) -->
+    <include
+        android:id="@+id/googleBooksFilterLayout"
+        layout="@layout/google_books_filters"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tabsLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 
     <!-- Shimmer Layout -->
     <com.facebook.shimmer.ShimmerFrameLayout

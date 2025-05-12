@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.bumptech.glide.Glide
 import com.example.tapplication.MainActivity
 import com.example.tapplication.R
 import com.example.tapplication.databinding.FragmentDetailBinding
@@ -81,6 +82,18 @@ class DetailFragment : Fragment() {
             libraryItemOptionalAttributeInput1.setText(book.author)
             libraryItemOptionalAttributeLabel2.hint = getString(R.string.book_optional_attribute_label_2)
             libraryItemOptionalAttributeInput2.setText(book.pages.toString())
+
+            val iconUrl = book.iconUrl
+
+            if(!iconUrl.isNullOrEmpty()) {
+                Glide.with(itemDetailIcon.context)
+                    .load(iconUrl)
+                    .placeholder(R.drawable.book_svg)
+                    .error(R.drawable.book_svg)
+                    .into(itemDetailIcon)
+            } else {
+                itemDetailIcon.setImageResource(R.drawable.book_svg)
+            }
         }
     }
 

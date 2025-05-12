@@ -10,7 +10,8 @@ data class Book(
     override var isAvailable: Boolean,
     override val name: String,
     val pages: Int,
-    val author: String
+    val author: String,
+    val iconUrl: String? = null
 ): LibraryItem(), Digitalizable<Book>, Parcelable {
     override fun getDetailedInfo() = "Книга: $name ($pages стр.) автора: $author с id: $id доступна: ${if (isAvailable) "Да" else "Нет"}"
 

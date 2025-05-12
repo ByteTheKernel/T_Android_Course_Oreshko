@@ -1,7 +1,11 @@
-package com.example.tapplication.data
+package com.example.tapplication.data.local
 
-import com.example.tapplication.library.*
-import com.example.tapplication.utils.*
+import com.example.tapplication.library.Book
+import com.example.tapplication.library.Disk
+import com.example.tapplication.library.LibraryItem
+import com.example.tapplication.library.Newspaper
+import com.example.tapplication.utils.ItemType
+import com.example.tapplication.utils.Month
 
 object LibraryItemMapper {
     fun fromEntity(entity: LibraryItemEntity): LibraryItem {
