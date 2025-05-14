@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/listFragment"
-        android:name="com.example.tapplication.ui.fragments.ListFragment"
+        android:name="com.example.tapplication.presentation.fragments.list.ListFragment"
         android:label="Library Items"
         tools:layout="@layout/fragment_list">
 
@@ -22,7 +22,7 @@
 
     <fragment
         android:id="@+id/detailFragment"
-        android:name="com.example.tapplication.ui.fragments.DetailFragment"
+        android:name="com.example.tapplication.presentation.fragments.detail.DetailFragment"
         android:label="Item Details"
         tools:layout="@layout/fragment_detail">
 
@@ -38,7 +38,7 @@
 
     <fragment
         android:id="@+id/addFragment"
-        android:name="com.example.tapplication.ui.fragments.AddFragment"
+        android:name="com.example.tapplication.presentation.fragments.add.AddFragment"
         android:label="Add new Item"
         tools:layout="@layout/fragment_add">
 
