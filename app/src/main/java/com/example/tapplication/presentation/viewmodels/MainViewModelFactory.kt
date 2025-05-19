@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.tapplication.data.repositories.LibraryRepositoryImpl
 import com.example.tapplication.data.repositories.RemoteBooksRepositoryImpl
 import com.example.tapplication.data.repositories.SettingsRepositoryImpl
-import com.example.tapplication.domain.interactors.LibraryInteractor
 import com.example.tapplication.domain.usecases.*
 
 class MainViewModelFactory(
@@ -25,7 +24,7 @@ class MainViewModelFactory(
             val saveSortOrderUseCase = SaveSortOrderUseCase(settingsRepository)
             val getSavedSortOrderUseCase = GetSavedSortOrderUseCase(settingsRepository)
 
-            val libraryInteractor = LibraryInteractor(
+            return MainViewModel(
                 loadItemsUseCase,
                 addItemUseCase,
                 updateItemStatusUseCase,
@@ -33,9 +32,7 @@ class MainViewModelFactory(
                 searchOnlineUseCase,
                 saveSortOrderUseCase,
                 getSavedSortOrderUseCase
-            )
-
-            return MainViewModel(libraryInteractor) as T
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

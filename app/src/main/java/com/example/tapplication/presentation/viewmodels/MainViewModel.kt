@@ -10,7 +10,6 @@ import com.example.tapplication.R
 import com.example.tapplication.domain.entities.LibraryItem
 import com.example.tapplication.common.utils.SortOrder
 import com.example.tapplication.common.utils.UiText
-import com.example.tapplication.domain.interactors.LibraryInteractor
 import com.example.tapplication.domain.usecases.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +17,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainViewModel(
-    private val libraryInteractor: LibraryInteractor
+    private val loadItemsUseCase: LoadItemsUseCase,
+    private val addItemUseCase: AddItemUseCase,
+    private val updateItemStatusUseCase: UpdateItemStatusUseCase,
+    private val removeItemUseCase: RemoveItemUseCase,
+    private val searchOnlineUseCase: SearchOnlineUseCase,
+    private val saveSortOrderUseCase: SaveSortOrderUseCase,
+    private val getSavedSortOrderUseCase: GetSavedSortOrderUseCase
 ): ViewModel() {
 
     enum class Tab { LIBRARY, GOOGLE_BOOKS }
@@ -138,7 +143,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    libraryInteractor.addItem(newItem)
+                    addItemUseCase(newItem)
                 }
                 _toastMessage.value = UiText.from(R.string.message_item_added)
                 loadData()
@@ -155,7 +160,7 @@ class MainViewModel(
             try {
                 Log.d("MainViewModel", "Attempting to update item availability: ${item.id}")
                 val updateItem = withContext(Dispatchers.IO) {
-                    libraryInteractor.updateItemStatus(item)
+                    updateItemStatusUseCase(item)
                 }
                 if (updateItem != null) {
                     val currentItems = _items.value.orEmpty().toMutableList()
@@ -188,7 +193,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 val remove = withContext(Dispatchers.IO) {
-                    libraryInteractor.removeItem(itemId)
+                    removeItemUseCase(itemId)
                 }
                 if (remove) {
                     val currentItems = _items.value.orEmpty().toMutableList()
@@ -220,10 +225,10 @@ class MainViewModel(
                 _isLoading.value = true
                 currentSortOrder = newSortOrder
                 currentPage = 0
-                libraryInteractor.saveSortOrder(newSortOrder)
+                saveSortOrderUseCase(newSortOrder)
 
                 val items = withContext(Dispatchers.IO) {
-                    libraryInteractor.loadItems(currentPage, currentSortOrder)
+                    loadItemsUseCase(currentPage, currentSortOrder)
                 }
                 _items.value = items
             } catch (e: CancellationException) {
@@ -242,7 +247,7 @@ class MainViewModel(
     private suspend fun loadNextPage() {
         val nextPage = currentPage++
         val nextPageItems = withContext(Dispatchers.IO) {
-            libraryInteractor.loadItems(nextPage, currentSortOrder)
+            loadItemsUseCase(nextPage, currentSortOrder)
         }
         val currentItems = _items.value.orEmpty()
 
@@ -258,7 +263,7 @@ class MainViewModel(
         if(previousPage < 0) return
 
         val previousPageItems = withContext(Dispatchers.IO) {
-            libraryInteractor.loadItems(previousPage, currentSortOrder)
+            loadItemsUseCase(previousPage, currentSortOrder)
         }
         val currentItems = _items.value.orEmpty()
 
@@ -301,7 +306,7 @@ class MainViewModel(
             try {
                 val items = withContext(Dispatchers.IO) {
                     Log.d("MainViewModel", "Calling repository.loadInitialData")
-                    libraryInteractor.loadItems(page, sortOrder)
+                    loadItemsUseCase(page, sortOrder)
                 }
                 _items.value = items
                 _initialLoadDone.value = true
@@ -330,7 +335,7 @@ class MainViewModel(
             _isLoading.value = true
             try {
                 val results = withContext(Dispatchers.IO) {
-                    libraryInteractor.searchOnline(title, author)
+                    searchOnlineUseCase(title, author)
                 }
                 Log.d("MainViewModel:searchBooksOnline", "results: $results")
                 _items.value = results
@@ -352,7 +357,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    libraryInteractor.addItem(item)
+                    addItemUseCase(item)
                 }
                 _toastMessage.value = UiText.from(R.string.message_item_added)
             } catch (e: CancellationException) {
@@ -364,6 +369,6 @@ class MainViewModel(
     }
 
     fun getSavedSortOrder(): SortOrder {
-        return libraryInteractor.getSavedSortOrder()
+        return getSavedSortOrderUseCase()
     }
 }
