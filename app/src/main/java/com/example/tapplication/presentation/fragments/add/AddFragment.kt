@@ -9,11 +9,13 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.tapplication.App
 import com.example.tapplication.common.extensions.show
 import com.example.tapplication.common.utils.ItemType
 import com.example.tapplication.databinding.FragmentAddBinding
@@ -28,11 +30,17 @@ class AddFragment : Fragment() {
 
     private var _binding: FragmentAddBinding? = null
     private val binding get() = _binding!!
-    private val detailsViewModel: DetailsViewModel by activityViewModels()
-    private val mainViewModel: MainViewModel by activityViewModels {
-        (requireActivity() as MainActivity).getMainViewModelFactory()
+    private val detailsViewModel: DetailsViewModel by viewModels{
+        (requireActivity().application as App).presentationComponent.daggerViewModelFactory()
+    }
+    private val mainViewModel: MainViewModel by viewModels {
+        (requireActivity().application as App).presentationComponent.daggerViewModelFactory()
     }
     private val isTwoPane: Boolean by lazy { args.isTwoPane }
+
+    private val presentationComponent by lazy {
+        (requireActivity().application as App).presentationComponent
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,6 +53,8 @@ class AddFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        presentationComponent.inject(this)
 
         // Настройка Spinner для выбора типа элемента
         val itemTypes = ItemType.entries.map { it.name }

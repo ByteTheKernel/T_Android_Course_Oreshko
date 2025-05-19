@@ -5,8 +5,9 @@ import com.example.tapplication.data.datasources.network.GoogleBooksApi
 import com.example.tapplication.data.datasources.network.GoogleBooksItemMapper
 import com.example.tapplication.domain.entities.LibraryItem
 import com.example.tapplication.domain.repositories.RemoteBooksRepository
+import javax.inject.Inject
 
-class RemoteBooksRepositoryImpl(
+class RemoteBooksRepositoryImpl @Inject constructor(
     private val api: GoogleBooksApi
 ): RemoteBooksRepository {
     override suspend fun searchBooksOnline(title: String?, author: String?): List<LibraryItem> {
