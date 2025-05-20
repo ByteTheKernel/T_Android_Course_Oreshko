@@ -10,6 +10,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
+import com.example.tapplication.App
 import com.example.tapplication.R
 import com.example.tapplication.common.extensions.gone
 import com.example.tapplication.databinding.FragmentDetailBinding
@@ -27,10 +28,14 @@ class DetailFragment : Fragment() {
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
     private val viewModel: MainViewModel by activityViewModels {
-        (requireActivity() as MainActivity).getMainViewModelFactory()
+        (requireActivity().application as App).presentationComponent.daggerViewModelFactory()
     }
     val itemId: Int by lazy { args.itemId }
     val isTwoPane: Boolean by lazy { args.isTwoPane }
+
+    private val presentationComponent by lazy {
+        (requireActivity().application as App).presentationComponent
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,6 +48,8 @@ class DetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        presentationComponent.inject(this)
 
         viewModel.getItemById(itemId)?.let { item ->
             bindItem(item)

@@ -10,8 +10,9 @@ import com.example.tapplication.domain.entities.Newspaper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class DetailsViewModel: ViewModel() {
+class DetailsViewModel @Inject constructor(): ViewModel() {
 
     private val _formState = MutableStateFlow(FormState())
     val formState: StateFlow<FormState> = _formState.asStateFlow()

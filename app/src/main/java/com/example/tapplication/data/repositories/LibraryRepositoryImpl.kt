@@ -9,8 +9,11 @@ import com.example.tapplication.domain.entities.LibraryItem
 import com.example.tapplication.domain.entities.Newspaper
 import com.example.tapplication.common.utils.SortOrder
 import com.example.tapplication.domain.repositories.LibraryRepository
+import javax.inject.Inject
 
-class LibraryRepositoryImpl(private val dao: LibraryDao): LibraryRepository {
+class LibraryRepositoryImpl @Inject constructor(
+    private val dao: LibraryDao
+): LibraryRepository {
     private val pageSize = 30
 
     override suspend fun getData(page: Int, sortOrder: SortOrder): List<LibraryItem> {

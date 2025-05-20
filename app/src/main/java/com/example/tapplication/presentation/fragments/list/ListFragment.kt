@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tapplication.App
 import com.example.tapplication.R
 import com.example.tapplication.common.extensions.gone
 import com.example.tapplication.common.extensions.show
@@ -38,8 +39,11 @@ class ListFragment: Fragment() {
         }
     }
 
+    private val presentationComponent by lazy {
+        (requireActivity().application as App).presentationComponent
+    }
     private val viewModel: MainViewModel by activityViewModels {
-        (requireActivity() as MainActivity).getMainViewModelFactory()
+        (requireActivity().application as App).presentationComponent.daggerViewModelFactory()
     }
 
     private var _binding: FragmentListBinding? = null
@@ -64,6 +68,8 @@ class ListFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        presentationComponent.inject(this)
 
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
             currentTab = state.selectedTab

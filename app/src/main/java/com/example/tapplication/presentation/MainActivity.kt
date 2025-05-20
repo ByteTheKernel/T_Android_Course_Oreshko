@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
+import com.example.tapplication.App
 import com.example.tapplication.R
 import com.example.tapplication.common.extensions.gone
 import com.example.tapplication.common.extensions.show
@@ -26,19 +27,19 @@ import com.example.tapplication.presentation.fragments.detail.DetailFragmentArgs
 import com.example.tapplication.presentation.fragments.list.ListFragment
 import com.example.tapplication.presentation.fragments.list.ListFragmentDirections
 import com.example.tapplication.presentation.viewmodels.MainViewModel
-import com.example.tapplication.presentation.viewmodels.MainViewModelFactory
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private lateinit var viewModel: MainViewModel
 
-    val factory: MainViewModelFactory by lazy {
-        val libraryRepository =
-            LibraryRepositoryImpl(AppDatabase.Companion.getDatabase(applicationContext).libraryDao())
-        val remoteBooksRepository = RemoteBooksRepositoryImpl(RetrofitHelper.createRetrofit())
-        val settingsRepository = SettingsRepositoryImpl(applicationContext)
-        MainViewModelFactory(libraryRepository, remoteBooksRepository, settingsRepository)
+
+    private val presentationComponent by lazy {
+        (application as App).presentationComponent
+    }
+
+    private val viewModelFactory by lazy {
+        (application as App).presentationComponent.daggerViewModelFactory()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +47,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
+        presentationComponent.inject(this)
+
+        viewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
 
         if (isTwoPaneMode()) {
             setupTwoPaneMode()
@@ -162,6 +165,4 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.clearSelectedItem()
     }
-
-    fun getMainViewModelFactory(): MainViewModelFactory = factory
 }

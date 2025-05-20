@@ -15,8 +15,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class MainViewModel(
+class MainViewModel @Inject constructor(
     private val loadItemsUseCase: LoadItemsUseCase,
     private val addItemUseCase: AddItemUseCase,
     private val updateItemStatusUseCase: UpdateItemStatusUseCase,

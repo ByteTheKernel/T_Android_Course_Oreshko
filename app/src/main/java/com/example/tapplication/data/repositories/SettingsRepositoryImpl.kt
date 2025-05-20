@@ -4,8 +4,11 @@ import android.content.Context
 import androidx.core.content.edit
 import com.example.tapplication.common.utils.SortOrder
 import com.example.tapplication.domain.repositories.SettingsRepository
+import javax.inject.Inject
 
-class SettingsRepositoryImpl(context: Context): SettingsRepository {
+class SettingsRepositoryImpl @Inject constructor(
+    context: Context
+): SettingsRepository {
 
     companion object {
         private const val PREFS_NAME = "prefs"
