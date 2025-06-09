@@ -3,8 +3,9 @@ package com.example.tapplication.domain.usecases
 import com.example.tapplication.common.utils.SortOrder
 import com.example.tapplication.domain.entities.LibraryItem
 import com.example.tapplication.domain.repositories.LibraryRepository
+import javax.inject.Inject
 
-class LoadItemsUseCase(
+class LoadItemsUseCase @Inject constructor(
     private val libraryRepository: LibraryRepository
 ) {
     suspend operator fun invoke(
