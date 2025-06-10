@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -16,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.tapplication.App
+import com.example.tapplication.common.extensions.gone
 import com.example.tapplication.common.extensions.show
 import com.example.tapplication.common.utils.ItemType
 import com.example.tapplication.databinding.FragmentAddBinding
@@ -89,46 +91,38 @@ class AddFragment : Fragment() {
             }
         }
 
-        // Обработка выбора типа элемента
+        // Подписка на ошибки
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                detailsViewModel.errorMessage.collect { error ->
+                    error?.let {
+                        Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        // Выбор типа элемента
         binding.itemTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedType = ItemType.entries[position]
                 detailsViewModel.updateType(selectedType)
+                // При смене типа очищаем поля
+                binding.libraryItemOptionalAttributeInput1.setText("")
+                binding.libraryItemOptionalAttributeInput2.setText("")
             }
-
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Обработка ввода данных
-        binding.itemDetailName.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                detailsViewModel.updateName(binding.itemDetailName.text.toString())
-            }
-        }
-
-        binding.itemId.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                detailsViewModel.updateId(binding.itemId.text.toString().toIntOrNull() ?: 0)
-            }
-        }
-
-        binding.libraryItemOptionalAttributeInput1.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                detailsViewModel.updateField1(binding.libraryItemOptionalAttributeInput1.text.toString())
-            }
-        }
-
-        binding.libraryItemOptionalAttributeInput2.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                detailsViewModel.updateField2(binding.libraryItemOptionalAttributeInput2.text.toString())
-            }
-        }
-
-
+        // Кнопка сохранить
         binding.saveButton.setOnClickListener {
-            detailsViewModel.createItemFromInput()
+            detailsViewModel.createItemFromInputDirectly(
+                name = binding.itemDetailName.text.toString(),
+                id = binding.itemId.text.toString().toIntOrNull() ?: 0,
+                field1 = binding.libraryItemOptionalAttributeInput1.text.toString(),
+                field2 = binding.libraryItemOptionalAttributeInput2.text.toString()
+            )
         }
-
     }
 
     private fun updateUIForType(type: ItemType) {
@@ -142,13 +136,13 @@ class AddFragment : Fragment() {
             ItemType.DISK -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.disk_svg)
                 binding.libraryItemOptionalAttributeLabel1.hint = "Type"
-                binding.libraryItemOptionalAttributeLabel2.visibility = View.GONE
+                binding.libraryItemOptionalAttributeLabel2.gone()
             }
             ItemType.NEWSPAPER -> {
                 binding.itemDetailIcon.setImageResource(R.drawable.newspaper_svg)
                 binding.libraryItemOptionalAttributeLabel1.hint = "Issue Number"
                 binding.libraryItemOptionalAttributeLabel2.hint = "Month"
-                binding.libraryItemOptionalAttributeLabel2.visibility = View.VISIBLE
+                binding.libraryItemOptionalAttributeLabel2.show()
             }
         }
     }
