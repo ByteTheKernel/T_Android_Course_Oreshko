@@ -29,7 +29,7 @@ app/
 - **MVVM**
 - **Room** (локальная БД)
 - **Retrofit** + **kotlinx.serialization** (Google Books API)
-- **Dagger** (DI)
+- **Dagger2** (DI)
 - **ViewBinding**
 - **Navigation Component**
 - **Glide** (загрузка изображений)
