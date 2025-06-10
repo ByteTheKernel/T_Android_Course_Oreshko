@@ -44,11 +44,13 @@ app/
 
 ## 📸 Скриншоты
 
-![Список библиотеки](screenshots/main_list.png)
-![Детальная информация](screenshots/detail_view.png)
-![Добавление элемента](screenshots/add_view.gif)
-![Удаление элемента](screenshots/delete_view.gif)
-![Поиск онлайн по Google Books](screenshots/search_online_view.gif)
+<div align="center">
+  <img src="screenshots/main_list.png"           alt="Список библиотеки"                    width="160" height="325" />
+  <img src="screenshots/detail_view.png"         alt="Детальная информация"                 width="160" height="325" />
+  <img src="screenshots/add_view.gif"            alt="Добавление элемента"                  width="160" height="325" />
+  <img src="screenshots/delete_view.gif"         alt="Удаление элемента"                    width="160" height="325" />
+  <img src="screenshots/search_online_view.gif"  alt="Поиск онлайн по Google Books"         width="160" height="325" />
+</div>
 
 ## 🛠️ Архитектура
 
